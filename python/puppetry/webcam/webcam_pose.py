@@ -59,7 +59,6 @@ import cv2
 import itertools
 import mediapipe as mp
 import eventlet
-import puppetry
 from camera import Camera
 from display import Display
 import sys
@@ -70,6 +69,20 @@ from math import sin, cos, pi, sqrt
 from pconsts import Vitruvian as V, Model as M
 from putils import *
 from pconsts import Vitruvian as V, Model as M, LandmarkIndicies as LI
+
+try:
+    import puppetry
+except ImportError as err:
+    # modify sys.path so we can find puppetry module in parent directory
+    currentdir = os.path.dirname(os.path.realpath(__file__))
+    parentdir = os.path.dirname(currentdir)
+    sys.path.append(parentdir)
+
+# now we can really import puppetry
+try:
+    import puppetry
+except ImportError as err:
+    sys.exit("Can't find puppetry module")
 
 # set up a logger sending to stderr, which gets routed to viewer logs
 LOGGER_FORMAT = "%(filename)s:%(lineno)s %(funcName)s: %(message)s"

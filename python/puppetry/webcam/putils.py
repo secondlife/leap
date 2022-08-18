@@ -36,7 +36,6 @@ import cv2
 import itertools
 import mediapipe as mp
 import eventlet
-import puppetry
 from camera import Camera
 from display import Display
 import sys

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """\
-@file mouth_move.py
-@brief simple LEAP script to move the avatar's mouth
+@file head_nod.py
+@brief simple LEAP script to move the avatar's head up and down, and back and forth
 
 $LicenseInfo:firstyear=2022&license=viewerlgpl$
 Second Life Viewer Source Code
@@ -26,7 +26,7 @@ $/LicenseInfo$
 """
 
 '''
-mouth_move.py -- use puppetry to animate the mouth
+head_nod.py -- use Puppetry to update head's local orientation
 
 Run this script via viewer menu...
     Advanced --> Puppetry --> Launch LEAP plug-in...
@@ -52,76 +52,43 @@ uncomment the print("") line in the main loop below.
 '''
 
 import eventlet
-import glm
 import math
+import os
+import sys
 import time
 
-import puppetry
+try:
+    import puppetry
+except ImportError as err:
+    # modify sys.path so we can find puppetry module in parent directory
+    currentdir = os.path.dirname(os.path.realpath(__file__))
+    parentdir = os.path.dirname(currentdir)
+    sys.path.append(parentdir)
+
+# now we can really import puppetry
+try:
+    import puppetry
+except ImportError as err:
+    sys.exit("Can't find puppetry module")
 
 # The avatar's head coordinate frame:
 #
-#         ______       turn(z)
-#        /o   o \       | 
-#       |   C    |      @-nod(Y)
-#       |  ===   |     /
-#        \______/   tilt(X)
-#           |       
-#     R-+-+-+-+-+-L
-#           |
-#           |
-#         +-@-+
-#         |   |
-#         +   +
-#         |   |
-#        /   /
+#             ______       turn(z)
+#            /o   o \       | 
+#           |   C    |      @-nod(Y)
+#           |  ---   |     /
+#            \______/   tilt(X)
+#               |       
+#     R-+-+-+-+ | +-+-+-+-L
+#               +
+#               |
+#               |
+#             +-@-+
+#             |   |
+#             +   +
+#             |   |
+#            /   /
 #
-# Mouth lips have several skin points:
-#                    a
-#        c  _________b_________  d
-#       .-'          e          '-.
-#     <   -----------------------   >
-#       '-.__________f__________.-'
-#                    g
-#                    h
-# mFaceTeethUpper-->
-#  a  mFaceLipUpperLeft local_pos={ 0.045, 0, -0.003 }
-#  b  mFaceLipUpperRight local_pos={ 0.045, 0, -0.003 }
-#  c  mFaceLipCornerLeft local_pos={ 0.028, -0.019, -0.01 }
-#  d  mFaceLipCornerRight local_pos={ 0.028, 0.019, -0.01 }
-#  e  mFaceLipUpperCenter local_pos={ 0.045, 0, -0.003 }
-# mFaceJaw-->
-#     mFaceTeethLower' local_pos={ 0.021, 0, -0.039 }
-# mFaceTeethLower-->
-#  f  mFaceLipLowerLeft local_pos={ 0.045, 0, 0 }
-#  g  mFaceLipLowerRight local_pos={ 0.045, 0, 0 }
-#  h  mFaceLipLowerCenter local_pos={ 0.045, 0, 0 }
-# 
-
-# hard-coded axis of rotation for lip movement
-SMILE_AXIS = glm.normalize(glm.vec3(0.5, 0.0, 1.0))
-
-class Smile:
-    def __init__(self):
-        self.joints = {}
-        self.joints['mFaceLipCornerLeft'] = {'local_rot': [0.0, 0.0, 0.0], 'coef': 1.0 }
-        self.joints['mFaceLipCornerRight'] = {'local_rot': [0.0, 0.0, 0.0], 'coef': -1.0 }
-        self.amplitude = math.pi / 8.0
-
-    def setIntensity(self, intensity):
-        for key, value in self.joints.items():
-            # rotate each bone about SMILE_AXIS varied by its coef
-            angle = self.amplitude * intensity * value['coef']
-            s = math.sin(angle/2.0)
-            c = math.cos(angle/2.0)
-            q = glm.quat(c, s * SMILE_AXIS)
-            value['local_rot'] = puppetry.packedQuaternion(q)
-
-    def getData(self):
-        data = {}
-        for key, value in self.joints.items():
-            data[key] = {'local_rot': value['local_rot']}
-        return data
-
 
 class Sho:
     '''Simple Harmonic Oscillator'''
@@ -143,40 +110,41 @@ class Sho:
     def theta(self):
         return self.t * self.wave_speed
 
-# we will alterately open mouth and smile
-pulse_period = 8.0
-oscillation_period = 0.75
+# we will alterately nod and shake the head using sinusoidal motion
+pulse_period = 16.0
+oscillation_period = 2.0
 pulse_speed = 2.0 * math.pi / pulse_period
 oscillation_speed = 2.0 * math.pi / oscillation_period
 
 pulsor = Sho(frequency = 1.0 / pulse_period, phase=0)
 rotator = Sho(frequency = 1.0 / oscillation_period, phase=0)
-jaw_amplitude = math.pi / 8.0
+amplitude = math.pi / 6.0
 
 update_period = 0.1
 
 
 def computeData(time_step):
     # advance the oscillators
-    global pulsor
-    global rotator
     pulsor.advance(time_step)
     rotator.advance(time_step)
 
+    # compute
     ps = pulsor.sin()
-    if ps < 0.0:
-        # wag jaw
-        yaw = 0.0
-        pitch = (jaw_amplitude * abs(ps)) * abs(rotator.sin())
-        roll = 0.0
-        data = {
-            'mFaceJaw':{'local_rot': puppetry.packedQuaternionFromEulerAngles(yaw, pitch, roll)}
-        }
+    tilt = 0.0
+    if ps > 0.0:
+        # nod
+        nod = (amplitude * ps) * rotator.sin()
+        turn = 0.0
     else:
-        # smile
-        smile = Smile()
-        smile.setIntensity(ps)
-        data = smile.getData()
+        # shake
+        nod = 0.0
+        turn = (amplitude * ps) * rotator.sin()
+
+    # assemble the message
+    packed_rot = puppetry.packedQuaternionFromEulerAngles(tilt, nod, turn)
+    data = {
+        'mHead':{'local_rot': packed_rot}
+    }
     return data
 
 def puppetry_coroutine():
@@ -194,10 +162,8 @@ def puppetry_coroutine():
 
 # start the real work
 puppetry.start()
-spinner = eventlet.spawn(puppetry_coroutine)
+eventlet.spawn(puppetry_coroutine)
 
+# loop until puppetry stops
 while puppetry.isRunning():
     eventlet.sleep(0.2)
-
-# cleanup
-spinner.wait()

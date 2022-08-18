@@ -26,8 +26,7 @@ $/LicenseInfo$
 """
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plot
-import puppetry
-  
+
 class Plot:
     '''Plots landmarks in a -1 to 1 space.'''
 

@@ -53,24 +53,38 @@ string into the script's stdin:
 '''
 
 import argparse
-import time
-import numpy as np
 import cv2
-import itertools
-import mediapipe as mp
 import eventlet
-import puppetry
+import itertools
+import glm
+import logging
+import mediapipe as mp
+import numpy as np
+import os
+import sys
+import time
+import traceback
+
 from camera import Camera
 from display import Display
 from plot import Plot
-import sys
-import traceback
-import logging
-import glm
 from math import sin, cos, pi, sqrt
 from putils import *
 from pconsts import Model as M, LandmarkIndicies as LI
 
+try:
+    import puppetry
+except ImportError as err:
+    # modify sys.path so we can find puppetry module in parent directory
+    currentdir = os.path.dirname(os.path.realpath(__file__))
+    parentdir = os.path.dirname(currentdir)
+    sys.path.append(parentdir)
+
+# now we can really import puppetry
+try:
+    import puppetry
+except ImportError as err:
+    sys.exit("Can't find puppetry module")
 
 DO_PLOT = False  #Set to True to display realtime 3D plot of data from mediapipe
 

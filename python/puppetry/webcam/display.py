@@ -25,18 +25,33 @@ Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
 $/LicenseInfo$
 """
 
-import time
-import numpy as np
 import cv2
-import itertools
-import mediapipe as mp
 import eventlet
-import puppetry
-from camera import Camera
-import sys
-import traceback
+import itertools
 import logging
+import mediapipe as mp
+import numpy as np
+import os
+import sys
+import time
+import traceback
+
+from camera import Camera
 from math import sin, cos
+
+try:
+    import puppetry
+except ImportError as err:
+    # modify sys.path so we can find puppetry module in parent directory
+    currentdir = os.path.dirname(os.path.realpath(__file__))
+    parentdir = os.path.dirname(currentdir)
+    sys.path.append(parentdir)
+
+# now we can really import puppetry
+try:
+    import puppetry
+except ImportError as err:
+    sys.exit("Can't find puppetry module")
 
 WINDOW_NAME = "Image"
 
