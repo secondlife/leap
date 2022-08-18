@@ -154,7 +154,7 @@ class Expression:
                             self.image_points, \
                             self.camera.matrix, \
                             self.camera.dist_coeffs, \
-                            flags=cv2.cv2.SOLVEPNP_ITERATIVE)
+                            flags=cv2.SOLVEPNP_ITERATIVE)
 
             #Get a rotation matrix.
             rmat, jac = cv2.Rodrigues(rot_vec)
