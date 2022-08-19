@@ -68,7 +68,7 @@ import traceback
 from camera import Camera
 from display import Display
 from plot import Plot
-from math import sin, cos, pi, sqrt
+from math import sin, cos, pi, sqrt, degrees, radians
 from putils import *
 from pconsts import Model as M, LandmarkIndicies as LI
 
@@ -96,9 +96,6 @@ logging.basicConfig( format=LOGGER_FORMAT, handlers=[logging.StreamHandler(sys.s
 _logger = logging.getLogger(__name__)
 
 UPDATE_PERIOD = 0.1     # time between puppetry updates
-
-RAD_TO_DEG = 57.2958
-DEG_TO_RAD  = 0.017453
 
 WINDOW_NAME = "Image"
 
@@ -242,14 +239,16 @@ class Expression:
     def rotate_head(self, output):
         '''Rotate the head and write it to the output stream'''
 
+        deg_rot = [ float(self.head_rot_ea[0] * -1.0), \
+                    float(self.head_rot_ea[1]) ,       \
+                    float(self.head_rot_ea[2] * 1.0) ]
+
         packed_quaternion = puppetry.packedQuaternionFromEulerAngles( \
-                                float(self.head_rot_ea[0] * DEG_TO_RAD * -1.0), \
-                                float(self.head_rot_ea[1] * DEG_TO_RAD), \
-                                float(self.head_rot_ea[2] * DEG_TO_RAD * -1.0) )
+                    radians(deg_rot[0]), radians(deg_rot[1]), radians(deg_rot[2]) )
 
         if puppetry.part_active('head'):
             output["mHead"] =  {"rot": packed_quaternion}
-        
+
         return self.head_rot_ea
 
     def handle_head(self, landmarks, output):
@@ -305,24 +304,18 @@ class Expression:
             self.hand_rot_ea[label] = get_weighted_average_vec( rot, self.hand_rot_ea[label], self.smoothing )
 
         #Fix the rotation for the viewer.  This should be fine since it is quat rotations.
-        #nrot = self.hand_rot_ea[label].copy()
-        #euler = glm.vec3( -0.5 * pi, 0.0 * pi , 0.0 * pi )
-        #quat = glm.quat(euler) * glm.quat(nrot)
+        nrot = self.hand_rot_ea[label].copy()
 
-        #eu2 = quat_to_euler( quat.w, quat.x, quat.y, quat.z )
-        #puppetry.log("Hand Qua: %.3f %.3f %.3f" % ( degrees( eu2[0] ), \
-        #                                            degrees( eu2[1] ), \
-        #                                            degrees( eu2[2] )  ) )
-
-        #packed_quaternion = puppetry.packedQuaternion( quat )
-
+        nrot[0] *= -1.0
+        #nrot[1] *= 1.0
+        nrot[2] *= -1.0
 
         packed_quaternion = puppetry.packedQuaternionFromEulerAngles( \
-                                float(self.hand_rot_ea[label][0] * DEG_TO_RAD * -1.0), \
-                                float(self.hand_rot_ea[label][1] * DEG_TO_RAD), \
-                                float(self.hand_rot_ea[label][2] * DEG_TO_RAD * -1.0) )
-
-        puppetry.log("Hand Rot: %.3f %.3f %.3f" % ( self.hand_rot_ea[label][0] * -1.0, self.hand_rot_ea[label][1], self.hand_rot_ea[label][2] * 1.0 ) )
+                                float(radians(nrot[0])), \
+                                float(radians(nrot[1])), \
+                                float(radians(nrot[2]))  \
+                             )
+        #puppetry.log("Hand Rot: %.3f %.3f %.3f" % ( self.hand_rot_ea[label][0] * -1.0, self.hand_rot_ea[label][1], self.hand_rot_ea[label][2] * 1.0 ) )
 
         joint_name = 'mWrist'+label
         if joint_name in output:
@@ -330,15 +323,7 @@ class Expression:
         else:
             output[joint_name] = { 'rot':packed_quaternion }
 
-        #if self.plot is not None:
-        #    elbow = self.avg_pose_pts[elbow_id].copy()
-        #    wrist = self.avg_pose_pts[wrist_id].copy()
-        #    self.plot.add_output_point(elbow)
-        #    self.plot.add_output_point(wrist)
-        #    #SPATTERS TODO finish making perp from quat
-        #    quat = make_perpendicular_from_subset(self.avg_pose_pts, \
-        #                                        [wrist_id, index_id, pinky_id], 0.2)
-        #    self.plot.add_perp_point(perp)
+        return glm.quat(nrot)
 
     def handle_hand(self, label, output):
         '''Handles the finer points of the hand
@@ -418,29 +403,20 @@ class Expression:
             #self.add_vector_pose_effector('mShoulder'+label, elbow_p, output)
             pose_wrist_v = self.add_vector_pose_effector('mElbow'+label, wrist_p, output)
 
-            #self.rotate_hand(label, output)
-
-            #Since rotation isn't work right, send local 0.
-            euler = glm.vec3( 0.0, 0.0, 0.0 )
-            quat = glm.quat(euler)
-            packed_quaternion = puppetry.packedQuaternion( quat )
-
-            joint_name = 'mWrist'+label
-            if joint_name in output:
-                output[joint_name]['local_rot'] = packed_quaternion
-            else:
-                output[joint_name] = { 'local_rot':packed_quaternion }
+            #quat = self.rotate_hand(label, output)
 
             if self.plot is not None:
                 elbow = self.avg_pose_pts[elbow_id].copy()
                 wrist = self.avg_pose_pts[wrist_id].copy()
+                index = self.avg_pose_pts[index_id].copy()
                 self.plot.add_output_point(elbow)
                 self.plot.add_output_point(wrist)
-                #SPATTERS TODO turn this back on when rotation works right.
-                #quat = make_perpendicular_from_subset(self.avg_pose_pts, [wrist_id, index_id, pinky_id], 0.2)
+
+                #SPATTERS figure out post scaling merge
+                #perp = rotate_point( wrist, index, quat )
                 #self.plot.add_perp_point(perp)
-        
-        else:
+
+        else:           #If we aren't rendering hands, don't render fingers.
             return
 
         return  #Forced finger disable
@@ -487,6 +463,36 @@ class Expression:
                 dist = magnitude ( distance_3d(debug_wrist_v, output[joint_name]['pos'] ) )
                 #outstr = outstr + " %s: %.3f" % ( joint_name, dist)
             #puppetry.log(outstr)
+
+    def get_initial_skeleton(self):
+        '''On startup, mediapipe blocks heavily, temporarily disrupting leap communication
+           So here we'll request/wait for skeleton data from the viewer before continuing.
+
+           NOTE: After skeleton data is received, we continue on.  The first frame of 
+           webcam capture may still be blocking, which means there is a small window of time
+           where if the agent changes skeletons in the viewer, this information may not 
+           be obtained by this plug-in module. 
+
+           TODO:  Move mediapipe into a thread to get around blocking
+        '''
+
+        puppetry.sendPuppetryData(dict(command='send_skeleton'))    #Request skeleton
+        retries = 3
+        end_time = time.time() + 2.0
+
+        while puppetry.isRunning() and retries > 0:
+            if puppetry.get_skeleton_data('scale') is not None:
+                return True           #We've got some data, can continue.
+
+            eventlet.sleep(0.1) #Sleep 1/10th of a second
+
+            cur_time = time.time()
+            if cur_time > end_time:
+                retries = retries - 1
+                end_time = cur_time + 3.0
+                if retries > 0:
+                    puppetry.sendPuppetryData(dict(command='send_skeleton'))    #Re-request skeleton data.
+        return False
 
 
     def main_loop(self):
@@ -569,6 +575,7 @@ class Expression:
                 if self.plot is not None:
                     self.plot.add_output_point(head_pos)
 
+                #Warning:  add_vector_pose_effector modifies passed in value
                 if puppetry.part_active('head'):
                     # the "head" points are actually on the face and tend to be
                     # too far down and forward so we push head_pos up and back
@@ -612,7 +619,9 @@ class Expression:
             #much so we'll presume that if there's more than 1.5x the time it 
             #took to do this tracking, there's time to fetch another frame.
             #If not, send the data and prep for next frame.
-            if (UPDATE_PERIOD - frame_compute_time) < (track_compute_time * 1.5): 
+
+            #if (UPDATE_PERIOD - frame_compute_time) < (track_compute_time * 1.5): 
+            if True: 
                 if success:
                     #Send the puppetry info to viewer first.
                     puppetry.sendPuppetryData(data)
@@ -671,9 +680,8 @@ def main(camera_num = 0):
         puppetry.log("Unable to create Expression for camera %r : %r" % (camera_num, str(exerr)))
         return
 
+    #face.get_initial_skeleton()     #Get skeleton data from viewer.
     face.main_loop()
-    if face.plot is not None:
-        face.plot.stop()
     puppetry.stop()
 
 if __name__ == "__main__":

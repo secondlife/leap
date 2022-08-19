@@ -42,36 +42,15 @@ import sys
 import traceback
 import logging
 import glm
-from math import sin, cos, pi, sqrt, atan2, asin
+from math import sin, cos, pi, sqrt, atan2, asin, acos, degrees, radians
 
-def pfv(vec):
-    '''SPATTERS temporary debug function to print vectors'''
+def print_float_vectors(vec):
+    '''debug function to print floating point vectors'''
     outstr = '('
     outstr = outstr + ', '.join('{:.3f}'.format(float(f)) for f in vec)
     outstr = outstr + ')'
     return outstr
 
-def quat_to_euler( w, x, y, z ):
-    '''Translate quaternion into Euler angles.
-       returns list in X Y Z order.'''
-
-    out = [ 0.0, 0.0, 0.0 ]
-
-    t0 = 2.0 * ( (w * x) + (y * z) )
-    t1 = 1.0 - ( 2.0 * ( ( x * y ) + ( y * y ) ) )
-    out[0] = atan2(t0, t1)
-
-    t2 = 2.0 * ( w * y - z * x )
-    t2 = min(1.0, t2)
-    t2 = max(-1.0, t2)
-    out[1] = asin(t2)
-
-    t3 = 2.0 * (w * z + x * y)
-    t4 = 1.0 - 2.0 * (y * y + z * z)
-    out[2] = atan2(t3,t4)
-
-    return out
-    
 
 def make_zxy_effector( name, point, output ):
     '''Switches point to from webcam-capture-frame 
@@ -102,10 +81,93 @@ def make_zxy_effector( name, point, output ):
     return
 
 def normalize(vec):
-    return glm.normalize(glm.vec3(vec))
+    '''Normalize things.  If a vector3, assume the position
+        if vector4, assume a quaternion.  Otherwise, assume a glm type'''
+    t = type(vec)
+
+    if type(vec) is dict or isinstance(vec, (np.ndarray, np.generic) ):
+        if len(vec) == 3:   #Normalize a vector3
+            return glm.normalize(glm.vec3(vec))
+        #Assume a hyperspherical cow
+        return glm.normalize(glm.quat(vec))
+    return glm.normalize(vec)
+
+def quat_to_euler(quat):
+    '''Given a quaternion, output a vector3.  Please only use for diagnostic data and not calculation.'''
+    GIMBAL_THRESHOLD = 0.000436
+    HALF_PI =  1.5707963267949
+
+    pitch = 2 
+    yaw   = 3
+    roll  = 1
+
+    q = None
+    r = [0.0, 0.0, 0.0]
+
+    if isinstance(quat, glm.quat):
+        q = [ float(quat.w), float(quat.x), float(quat.y), float(quat.z) ]
+    elif type(quat) is dict and len(quat) == 4:
+        q = quat
+    else:
+        raise ValueError("Accepts only glm.quat or a list of 4 floats.  Passed type is %s" % (str(type(quat))))
+
+    sx = 2 * (q[pitch] * q[0] - q[yaw] * q[roll])
+    sy = 2 * (q[yaw] * q[0] + q[pitch]* q[roll])
+    ys = q[0] * q[0] - q[yaw] * q[yaw]
+    xz = q[pitch] * q[pitch] - q[roll] * q[roll]
+    cx = ys - xz
+    cy = sqrt(sx * sx + cx * cx)
+
+    x = 2
+    y = 1
+    z = 0
+
+    if cy > GIMBAL_THRESHOLD:
+        r[x]  = atan2(sx, cx)
+        r[y] = atan2(sy, cy)
+        r[z]   = atan2(2 * (q[roll] * q[0] - q[pitch] * q[yaw]), ys + xz)
+    else: # gimbal lock
+        if (sy > 0):
+            r[y] = HALF_PI
+            r[z]= 2 * atan2(q[roll] + q[pitch], q[0] + q[yaw])
+        else:
+            r[y] = -HALF_PI
+            r[z]= 2 * atan2(q[roll] - q[pitch], q[0] - q[yaw])
+        r[x] = 0
+
+    return r
 
 def magnitude(vec):
     return glm.length(glm.vec3(vec))
+
+def conjugate_quat(quat):
+    '''Given a GLM.quaternion, returns conjugate as a glm quaternion.'''
+    result = glm.quat(quat)
+    result.x *= -1.0
+    result.y *= -1.0
+    result.z *= -1.0
+    return result
+
+def rotate_vector(vec, q1):
+    '''Rotate a vector by a quaternion.'''
+    q2 = glm.quat()
+    q2.w = 0.0
+    q2.x = vec[0]
+    q2.y = vec[1]
+    q2.z = vec[2]
+
+    q3 =  (q1 * q2) * conjugate_quat(q1)
+    return [q3.x, q3.y, q3.z]
+
+def rotate_point(origin, point, rot):
+    '''Rotate point about origin by rotation'''
+    dir = get_direction( origin, point )    #Direction from origin point to arbitary point
+    mag = magnitude(dir)                    #Distance from origin to poiont
+    dir = normalize(dir)
+    ndir= rotate_vector(dir, rot)           #Rotate normalized vector 
+    for d in ndir:
+        d *= mag
+    return ndir
 
 def get_zxy(points, index):
     '''Passed in the set of points and an index, returns a vector 3 in ZYX order'''
@@ -245,10 +307,6 @@ def clear_average(dest):
         d[0] =  np.double('nan')
         d[1] =  np.double('nan')
         d[2] =  np.double('nan')
-
-def rotate_vector( point, origin, rotation ):
-    '''Rotate point around origin by rotation'''
-    return rotation * get_direction(origin, point)
 
 def scale_z(factor, dest):
     '''Scales the Z aspect of all points in dest by factor'''

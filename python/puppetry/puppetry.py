@@ -252,6 +252,16 @@ def enable_parts(args):
         parts_mask = int(new_parts_mask)
         _logger.info(f"enable_parts set mask to {parts_mask}")
 
+@registerCommand("set_skeleton")
+def set_skeleton(args):
+    """ Receive update of the skeleton data. """
+
+    global skeleton_data
+
+    skeleton_dict = args
+    if skeleton_dict is not None:
+        skeleton_data = skeleton_dict
+
 def get_skeleton_data(name):
     """Looks for toplevel field named name in skeleton_data
         returns None if not found, otherwise data."""
@@ -260,18 +270,6 @@ def get_skeleton_data(name):
         if name in skeleton_data:
             return skeleton_data[name]
     return None
-
-@registerCommand("set_skeleton")
-def set_skeleton(args):
-    """ Receive update of the skeleton data. """
-
-    global skeleton_data
-
-    skeleton_dict = args.get('set_skeleton', None)
-    if skeleton_dict is not None:
-        skeleton_data = skeleton_dict
-        _logger.info(f"Skeleton data={str(skeleton_data)}")
-
 
 def setLogLevel(level):
     try:
