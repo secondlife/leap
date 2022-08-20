@@ -54,7 +54,6 @@ string into the script's stdin:
 
 import argparse
 import cv2
-import eventlet
 import itertools
 import glm
 import logging
@@ -78,6 +77,8 @@ except ImportError as err:
     # modify sys.path so we can find puppetry module in parent directory
     currentdir = os.path.dirname(os.path.realpath(__file__))
     parentdir = os.path.dirname(currentdir)
+    sys.path.append(parentdir)
+    parentdir = os.path.dirname(parentdir)
     sys.path.append(parentdir)
 
 # now we can really import puppetry
