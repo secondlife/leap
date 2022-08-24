@@ -87,8 +87,6 @@ try:
 except ImportError as err:
     sys.exit("Can't find puppetry module")
 
-DO_PLOT = False  #Set to True to display realtime 3D plot of data from mediapipe
-
 # set up a logger sending to stderr, which gets routed to viewer logs
 LOGGER_FORMAT = "%(filename)s:%(lineno)s %(funcName)s: %(message)s"
 LOGGER_LEVEL = logging.INFO
@@ -115,20 +113,16 @@ class Expression:
                 min_detection_confidence = 0.5,    \
                 min_tracking_confidence  = 0.5)
         self.detected = None
-        self.camera = Camera(camera_num = camera_num)
-        self.display = Display()
-        self.plot = None
-        if DO_PLOT:
-            self.plot = Plot()
-        self.face_box = None
+        self.camera = Camera(camera_num = camera_num)   #The capture device
+        self.display = Display()                        #A display window
+        self.plot = None                                #A 3D plotting window.
         self.pose_face_center    = [ 0.0, 0.0, 0.0 ]    #Center of face in pose
         self.pose_pelvis_center  = [ 0.0, 0.0, 0.0 ]    #Center of pelvis_center in pose
         self.face_rot_vec   = None  #The rotation of the face in the frame
         self.face_pos_vec   = None  #Translation of the face from center
         self.head_rot_ea   = [ 0.0, 0.0, 0.0 ] #Stored value for exp avg.
-        self.face_transmat = None   #Face Transformation matrix.
         self.point_smoothing = 1.0  #Smoothing factor 0-1 lower is smoother
-        self.smoothing = 0.4  #Smoothing factor 0-1 lower is smoother
+        self.rotation_smoothing = 0.4  #Smoothing factor 0-1 lower is smoother
         self.image_points = np.empty([6,2], dtype="double")
         self.avg_face_pts = np.zeros([NUM_FACE_POINTS,3], dtype="double")
         self.avg_pose_pts = np.zeros([NUM_POSE_POINTS,3], dtype="double")
@@ -141,7 +135,34 @@ class Expression:
         self.expected_normalized_neck_height = 0.63
         self.neck_vertical_offset = 0.0
 
-    def find_model_rotation(self, points, model_points, orientation_landmarks):
+        self.config()
+
+    def config(self):
+        """Set options in utility libraries"""
+
+        # CAMERA: Camera handles communication with hardware device and the images captured.
+        # the only config option for camera is to downsample the data from the camera.
+        # Setting a smaller resolution will increase frame and decrease detection quality.
+
+        #self.camera.downsample = [320,240] #Uncomment to downsample, params are X,Y dimensions
+
+        # DISPLAY: Display is a direct view into the video capture. It may be optionally configured
+        # to show the capture image, overlay of points, etc.
+        #self.display.display = False           #Completely disable the display window
+        #self.display.dimensions = [320, 200]   #Specify X,Y dimensions for output or None for camera resolution.
+        #self.display.display_video = False     #Set True for captured video in display window.
+        #self.display.display_face_pts = False  #Set True for overlay of face landmarks.
+        #self.display.display_fps   = False     #Set True for estimated capture frames per second.
+        #self.display.mirror = False            #Set True to flip display window left to right
+
+        # PLOT: Plot is a primitive debug tool which displays the captured points in a 
+        # rotatable 3D space.
+        DO_PLOT = False     #Display a plot window with captured points in a 3D space
+
+        if DO_PLOT:
+            self.plot = Plot()
+
+    def find_model_rotation(self, points, model_points, orientation_landmarks, max_degrees=60):
         '''Use a subset of the detected points to determine
            the rotation of the face relative the camera.'''
 
@@ -180,7 +201,8 @@ class Expression:
                     angles[1] \
                 ]
 
-            if abs(rot[1]) > 60:
+            #Constrain rotations
+            if abs(rot[1]) > max_degrees:
                 if rot[1] >= 0:
                     rot[1] = 180 - rot[1]
                 else:
@@ -194,8 +216,9 @@ class Expression:
         return rot_vec, pos_vec, rot
 
     def add_vector_pose_effector(self, name, joint, output):
-        # The Puppetry feature expects the data to be "normalized" such that the span
-        # between both arms is 2.0 units.
+        '''The Puppetry feature expects the data to be "normalized" such that the span
+         between both arms is 2.0 units.'''
+
         normalization_factor = 2.0 / (self.arm_lengths['Left'] + self.arm_lengths['Right'])
         joint[0] *= normalization_factor
         joint[1] *= normalization_factor
@@ -247,7 +270,7 @@ class Expression:
         packed_quaternion = puppetry.packedQuaternionFromEulerAngles( \
                     radians(deg_rot[0]), radians(deg_rot[1]), radians(deg_rot[2]) )
 
-        if puppetry.part_active('head'):
+        if puppetry.part_active('head'):                        #Add head rotation data to the output stream
             output["mHead"] =  {"rot": packed_quaternion}
 
         return self.head_rot_ea
@@ -263,7 +286,7 @@ class Expression:
             return False
 
         if abs(rot[0]) <= 60 and abs(rot[1]) <= 60 and abs(rot[2]) <= 60:
-            self.head_rot_ea = get_weighted_average_vec( rot, self.head_rot_ea, self.smoothing )
+            self.head_rot_ea = get_weighted_average_vec( rot, self.head_rot_ea, self.rotation_smoothing )
 
         #Animate the avatar
         self.rotate_head(output)
@@ -290,23 +313,25 @@ class Expression:
             wrist (the heel of the palm)'''
 
         #Get direction across the finger bases.
-        palm_dir = get_direction(self.avg_hand_pts[label][5], \
-                                 self.avg_hand_pts[label][17] )
+        palm_dir = get_direction(self.avg_hand_pts[label][LI.fingerbases['Index']], \
+                                 self.avg_hand_pts[label][LI.fingerbases['Pinky']] )
         #Create a hand heel position from wrist and fingerbases direction.
         for idx in range(0,3):
             self.avg_hand_pts[label][NUM_HAND_POINTS][idx] = \
                 self.avg_hand_pts[label][0][idx] + palm_dir[idx]
 
         #Find rotation of the hand.
+        max_degrees = 90
         rot_vec, pos_vec, rot = \
-            self.find_model_rotation(self.avg_hand_pts[label], M.hand_points[label], LI.hand_orientation)
+            self.find_model_rotation(self.avg_hand_pts[label], M.hand_points[label], LI.hand_orientation, max_degrees)
 
-        if abs(rot[0]) <= 90 and abs(rot[1]) <= 90 and abs(rot[2]) <= 90:
-            self.hand_rot_ea[label] = get_weighted_average_vec( rot, self.hand_rot_ea[label], self.smoothing )
+        if abs(rot[0]) <= max_degrees and abs(rot[1]) <= max_degrees and abs(rot[2]) <= max_degrees:
+            self.hand_rot_ea[label] = get_weighted_average_vec( rot, self.hand_rot_ea[label], self.rotation_smoothing )
 
         #Fix the rotation for the viewer.  This should be fine since it is quat rotations.
         nrot = self.hand_rot_ea[label].copy()
 
+        #Flip directions
         nrot[0] *= -1.0
         #nrot[1] *= 1.0
         nrot[2] *= -1.0
@@ -400,8 +425,21 @@ class Expression:
 
             wrist_p[1] += self.neck_vertical_offset
 
-            #Yes that's intended, the elbow is shoulder, the wrist is the elbow
-            #self.add_vector_pose_effector('mShoulder'+label, elbow_p, output)
+            #Yes the following is intended, the elbow is shoulder, the wrist is the elbow
+ 
+
+            #======Set the position of the elbow.======
+            #In the viewer, sending the shoulder position automatically disables the 
+            #constraint.  Additionally, for two consecutive joints positions sent to the
+            #viewer, the viewer shall automatically take the direction from child to parent
+            #and adjust the position of the parent target to be exactly the bone-length 
+            #distance from the child.
+
+            #joint_name = 'mShoulder'+label
+            #self.add_vector_pose_effector(joint_name, elbow_p, output)
+            #output[joint_name]['no_constraint'] = True      #Unneeded; example of disabling a constraint
+
+            #======Set the position of the wrist.=======
             pose_wrist_v = self.add_vector_pose_effector('mElbow'+label, wrist_p, output)
 
             #quat = self.rotate_hand(label, output)
@@ -532,8 +570,6 @@ class Expression:
                 self.detected = self.holistic.process(self.camera.rgb_image)
             else:
                 success = False
-
-            self.face_box = None
 
             if success and self.detected.face_landmarks is not None:
                 data={} #At this point we know we have data so flush any subframe data.

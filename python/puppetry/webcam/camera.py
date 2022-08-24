@@ -29,7 +29,7 @@ import numpy as np
 import cv2
 
 class Camera:
-    '''A utility class to manage the camera and output display.'''
+    '''A utility class to manage the camera and captured images'''
 
     def __init__(self, camera_num = 0):
         self.device = None          #Handler to the webcam

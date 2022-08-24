@@ -28,26 +28,6 @@ $/LicenseInfo$
 
 import numpy as np
 
-class Vitruvian:
-    '''Based on DaVinci's Vitruvian Man and extended for the furry avatar,
-       Vitruvian is a normalization scale where 0 is the root joint (pelvis)
-       and 1 is the maximum extension of the longest joint chain'''
-
-    fv_scale = 0.75    #Furry Vitruvian smaller than Vitruvian. scale accordingly
-    #face_width = 0.09316
-    face_width = 0.055
-    #face_width = 0.025
-    palm_width = 0.0711632 
-    inter_pupilary = 0.016
-    shoulder_width = 0.4218
-    nose_ear_z = 0.029          #Z dist from nose tip to ear base.
-    facepalm_ratio = palm_width/face_width
-    shoulderpalm_ratio = palm_width/shoulder_width
-    lip_eye_height = 0.020702
-    face_center =  [ 0.0, 0.505, 0.0 ]
-    max_arm_reach = 0.4
-
-
 class Model:
     '''Model contains data that pertains to a generic notion of a person
        in T-Pose and provides a frame of reference for comparision against 
