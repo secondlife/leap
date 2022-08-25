@@ -8,7 +8,7 @@ pip3 install eventlet llbase PyGLM tkinter
 ```
 The webcam capture scripts have more dependencies:
 ```
-pip3 install numpy opencv-python Pillow face_recognition mediapipe
+pip3 install numpy opencv-python mediapipe
 ```
 Note: the **opencv-python** module depends on **dlib** which may fail to install via **pip3** in which case it must be manually installed.
 Instructions can be found at the the [davisking/dlib github page](https://github.com/davisking/dlib).

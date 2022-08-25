@@ -52,6 +52,27 @@ string into the script's stdin:
      'features':{}},'pump':'54481a53-c41f-4fc2-606e-516daed03636'}
 '''
 
+#Overview
+'''
+webcam_puppetry is an example of using LEAP to control the avatar in the Second 
+Life viewer via live feed from a webcam processed through OpenCV 
+(https://opencv.org) and Mediapipe (https://google.github.io/mediapipe/)
+
+In brief, OpenCV manages most of the webcam capture and windowing/displaying 
+the image and overlays.  It also provides tools for translating a perspective
+view to a 3D view.  Mediapipe 
+
+Like the other example scripts, webcam capture has the same general structure 
+for initializing the puppetry interface and communicationing with the viewer. To
+animate the avatar, openCV is used to capture images from the camera.
+
+Images from the camera are passed into mediapipe which does detection for the
+pose hands and face
+
+Avatar position and rotation information is extracted from the mediapipe data
+and sent to the viewer via LEAP
+'''
+
 import argparse
 import cv2
 import itertools
@@ -164,7 +185,7 @@ class Expression:
 
     def find_model_rotation(self, points, model_points, orientation_landmarks, max_degrees=60):
         '''Use a subset of the detected points to determine
-           the rotation of the face relative the camera.'''
+           the rotation of the model relative the camera.'''
 
         #Extract orientation landmarks from points
         index=0
@@ -265,7 +286,7 @@ class Expression:
 
         deg_rot = [ float(self.head_rot_ea[0] * -1.0), \
                     float(self.head_rot_ea[1]) ,       \
-                    float(self.head_rot_ea[2] * 1.0) ]
+                    float(self.head_rot_ea[2]) ]
 
         packed_quaternion = puppetry.packedQuaternionFromEulerAngles( \
                     radians(deg_rot[0]), radians(deg_rot[1]), radians(deg_rot[2]) )
@@ -278,6 +299,8 @@ class Expression:
     def handle_head(self, landmarks, output):
         '''handle stuff pertaining to the head'''
 
+
+        #Find the rotation of the head relative the camera from the perspective image.
         average_landmarks(landmarks, self.avg_face_pts, NUM_FACE_POINTS, self.point_smoothing)
         self.face_rot_vec, self.face_pos_vec, rot = \
             self.find_model_rotation(self.avg_face_pts, M.face_points, LI.face_orientation)
@@ -285,6 +308,7 @@ class Expression:
         if rot is None:
             return False
 
+        #Constrain the rotational range of the head so it doesn't spin around wildly. weighted avg to smooth.
         if abs(rot[0]) <= 60 and abs(rot[1]) <= 60 and abs(rot[2]) <= 60:
             self.head_rot_ea = get_weighted_average_vec( rot, self.head_rot_ea, self.rotation_smoothing )
 
@@ -310,7 +334,7 @@ class Expression:
             the thumb moves around a bit too much so we are simply going to 
             take the the distance and direction from the index base to 
             the pinky base and copy that to a new point relative the 
-            wrist (the heel of the palm)'''
+            wrist and call it the heel of the palm'''
 
         #Get direction across the finger bases.
         palm_dir = get_direction(self.avg_hand_pts[label][LI.fingerbases['Index']], \
@@ -334,7 +358,7 @@ class Expression:
         #Flip directions
         nrot[0] *= -1.0
         #nrot[1] *= 1.0
-        nrot[2] *= -1.0
+        #nrot[2] *= -1.0
 
         packed_quaternion = puppetry.packedQuaternionFromEulerAngles( \
                                 float(radians(nrot[0])), \
@@ -426,7 +450,6 @@ class Expression:
             wrist_p[1] += self.neck_vertical_offset
 
             #Yes the following is intended, the elbow is shoulder, the wrist is the elbow
- 
 
             #======Set the position of the elbow.======
             #In the viewer, sending the shoulder position automatically disables the 
@@ -451,7 +474,6 @@ class Expression:
                 self.plot.add_output_point(elbow)
                 self.plot.add_output_point(wrist)
 
-                #SPATTERS figure out post scaling merge
                 #perp = rotate_point( wrist, index, quat )
                 #self.plot.add_perp_point(perp)
 
@@ -459,6 +481,7 @@ class Expression:
             return
 
         return  #Forced finger disable
+
         if puppetry.part_active('fingers'):
             debug_wrist_v = output['mElbow'+label]['pos']
 
@@ -489,8 +512,6 @@ class Expression:
             #avg_wrist_v *= hand_ratio
             #self.create_relative_effector('mWrist'+label, pose_wrist_v, avg_wrist_v, output)
 
-            #puppetry.log("Normies: mHandRight3Thumb: 0.066 mHandRight3Index: 0.098 mHandRight3Middle: 0.104 mHandRight3Ring: 0.099 mHandRight3Pinky: 0.086 ")
-            #outstr = "Geners:  "
             for key in LI.fingertips:
                 tip_v = self.avg_hand_pts[label][LI.fingertips[key]]    #This fingertip in the hand.
                 tip_d = np.array( axial_correction * get_direction(hand_wrist_v, tip_v) )   #Direction from wrist to fingertip
@@ -500,8 +521,6 @@ class Expression:
                 self.create_relative_effector(joint_name, pose_wrist_v, tip_d, output)
 
                 dist = magnitude ( distance_3d(debug_wrist_v, output[joint_name]['pos'] ) )
-                #outstr = outstr + " %s: %.3f" % ( joint_name, dist)
-            #puppetry.log(outstr)
 
     def get_initial_skeleton(self):
         '''On startup, mediapipe blocks heavily, temporarily disrupting leap communication
@@ -548,13 +567,13 @@ class Expression:
 
         show_erase = True
 
-        data={}
+        data={}                     #Data structure to be output to LEAP
         while puppetry.isRunning():
             # Check to see if the camera device has changed
             if puppetry.camera_number is not None:
-                self.display.erase_image()
+                self.display.erase_image()          #Flush last captured image
                 show_erase = True
-                self.camera.device.release()
+                self.camera.device.release()        #Release the old camera.
                 self.camera = Camera(camera_num = puppetry.camera_number)
                 puppetry.camera_number = None
                 self.camera.configure_camera()         # Fire it up
@@ -566,35 +585,34 @@ class Expression:
                 new_frame = False
 
             face = None
-            if self.camera.get_rgb_frame():
-                self.detected = self.holistic.process(self.camera.rgb_image)
+            if self.camera.get_rgb_frame():     #Get a frame of capture from the camera
+                #Holistic performs detection of meshes for the body pose and key points in 
+                #the hands and face
+                self.detected = self.holistic.process(self.camera.rgb_image)    #Detect forms
             else:
                 success = False
 
+            #If there is face data, use it to orient and position the head.
             if success and self.detected.face_landmarks is not None:
                 data={} #At this point we know we have data so flush any subframe data.
-                self.display.prep_output(self.camera.bgr_image)
-                success = self.handle_head(self.detected.face_landmarks, data)
+                self.display.prep_output(self.camera.bgr_image) #Add face data to output display
+                success = self.handle_head(self.detected.face_landmarks, data)  #Rotate/position head
             else:
                 success = False
 
             if success and self.detected.pose_world_landmarks is not None:
-                #Found the face, let's proceed
+                #pose_world_landmarks gives us a simplified skeleton in a normalized 3D space.
+                #average_landmarks uses an exponentially weighted average to reduce the noise
                 average_landmarks(self.detected.pose_world_landmarks, \
                                   self.avg_pose_pts, \
                                   NUM_POSE_POINTS, \
                                   self.point_smoothing)
 
-                #Get the detected shoulder width
-                self.shoulder_width = magnitude( \
-                        get_landmark_direction( \
-                                self.detected.pose_world_landmarks.landmark[11], \
-                                self.detected.pose_world_landmarks.landmark[12] ) )
-
                 #Note we draw pose_landmarks not pose_world_landmarks
                 self.display.draw_landmarks(self.detected.pose_landmarks)
 
                 if self.plot is not None:
+                    #The plotting window displays the captured points in a model 3D space.
                     self.plot.add_pose_landmarks(self.detected.pose_world_landmarks)
 
                 #Get the pose's face center (exclude nose).
@@ -605,6 +623,7 @@ class Expression:
                                             self.avg_pose_pts)
 
 
+                #Average the position of the ears to create a center position for the head.
                 head_id = 9
                 other_head_id = 10
                 head_pos = average_sequential_points(head_id, other_head_id, self.avg_pose_pts)
@@ -657,15 +676,16 @@ class Expression:
             #took to do this tracking, there's time to fetch another frame.
             #If not, send the data and prep for next frame.
 
-            #if (UPDATE_PERIOD - frame_compute_time) < (track_compute_time * 1.5): 
-            if True: 
+            #if (UPDATE_PERIOD - frame_compute_time) < (track_compute_time * 1.5):      #Process multiple camera frames per frame for smoother data.
+            if True:                                                                    #Process single camera frame per frame for less resource consumption
                 if success:
                     #Send the puppetry info to viewer first.
                     puppetry.sendPuppetryData(data)
+
                     # have an image from the camera, use it
                     self.display.do_display(track_start_time)
 
-                    if self.plot is not None:
+                    if self.plot is not None:   #If plotting, draw.
                         self.plot.draw()
                         frame_number += 1
                         self.plot.set_frame_number(frame_number)
@@ -708,9 +728,10 @@ class Expression:
 def main(camera_num = 0):
     '''pylint wants to docstring for the main function'''
     # _logger.setLevel(logging.DEBUG)
-    puppetry.start()
+
+    puppetry.start()                                    #Initiate puppetry communication
     try:
-        face = Expression(camera_num = camera_num)
+        face = Expression(camera_num = camera_num)      #Init the expression plug-in
     except Exception as exerr:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         puppetry.log("stacktrace: %r" % traceback.format_tb(exc_traceback))
