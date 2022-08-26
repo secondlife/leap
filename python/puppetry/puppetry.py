@@ -85,7 +85,7 @@ except ImportError as err:
 try:
     import leap
 except ImportError as err:
-    sys.exit("Can't find leap, we're in serious trouble")
+    sys.exit(f"Failed to import leap module: err={err}")
 
 CONTROLLER_PUMP = 'puppetry.controller'
 
