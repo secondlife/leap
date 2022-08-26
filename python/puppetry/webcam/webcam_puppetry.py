@@ -151,7 +151,7 @@ class Expression:
                               'Right': np.zeros([NUM_HAND_POINTS+1,3], dtype="double") }
         self.hand_rot_ea = { 'Left':  [ 0.0, 0.0, 0.0 ],
                              'Right': [ 0.0, 0.0, 0.0 ] }
-        self.arm_lengths = { 'Left' : 1.0, 'Right': 1.0 }
+        self.arm_lengths = { 'Left' : 0.5, 'Right': 0.5 }
 
         self.expected_normalized_neck_height = 0.63
         self.neck_vertical_offset = 0.0
@@ -283,10 +283,15 @@ class Expression:
 
     def rotate_head(self, output):
         '''Rotate the head and write it to the output stream'''
-
+        # Note: the best value for PITCH_OFFSET depends on the location
+        # of the camera relative to your face when you look straight at
+        # the computer screen. If the camera is above your face then you
+        # want PITCH_OFFSET to to be negative by the approximate degrees you
+        # would move to look straight at the camera, otherwise positive.
+        PITCH_OFFSET = -10.0 # degrees
         deg_rot = [ float(self.head_rot_ea[0] * -1.0), \
-                    float(self.head_rot_ea[1]) ,       \
-                    float(self.head_rot_ea[2]) ]
+                    float(self.head_rot_ea[1] + PITCH_OFFSET) , \
+                    float(self.head_rot_ea[2] * 1.0) ]
 
         packed_quaternion = puppetry.packedQuaternionFromEulerAngles( \
                     radians(deg_rot[0]), radians(deg_rot[1]), radians(deg_rot[2]) )
@@ -635,8 +640,8 @@ class Expression:
                 if puppetry.part_active('head'):
                     # the "head" points are actually on the face and tend to be
                     # too far down and forward so we push head_pos up and back
-                    DEFAULT_HEAD_VERTICAL_OFFSET = -0.08
-                    DEFAULT_HEAD_FORWARD_OFFSET = 0.20
+                    DEFAULT_HEAD_VERTICAL_OFFSET = -0.10
+                    DEFAULT_HEAD_FORWARD_OFFSET = 0.23
                     head_pos[1] += DEFAULT_HEAD_VERTICAL_OFFSET
                     head_pos[2] += DEFAULT_HEAD_FORWARD_OFFSET
                     #Warning:  add_vector_pose_effector modifies passed in value
