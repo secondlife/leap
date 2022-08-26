@@ -17,7 +17,7 @@ except ImportError as err:
 try:
     import puppetry
 except ImportError as err:
-    sys.exit("Can't find puppetry module")
+    sys.exit(f"Failed to load puppetry module: err={err}")
 
 '''
 Note: When you debug this script at the command line it will block

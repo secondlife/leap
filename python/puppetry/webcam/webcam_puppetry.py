@@ -99,14 +99,12 @@ except ImportError as err:
     currentdir = os.path.dirname(os.path.realpath(__file__))
     parentdir = os.path.dirname(currentdir)
     sys.path.append(parentdir)
-    parentdir = os.path.dirname(parentdir)
-    sys.path.append(parentdir)
 
 # now we can really import puppetry
 try:
     import puppetry
 except ImportError as err:
-    sys.exit("Can't find puppetry module")
+    sys.exit(f"Failed to load puppetry module: err={err}")
 
 # set up a logger sending to stderr, which gets routed to viewer logs
 LOGGER_FORMAT = "%(filename)s:%(lineno)s %(funcName)s: %(message)s"
