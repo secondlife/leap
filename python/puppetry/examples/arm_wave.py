@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """\
-@file left_arm_right_turn.py
+@file arm_wave.py
 @brief simple LEAP script to move the avatar
 
 $LicenseInfo:firstyear=2022&license=viewerlgpl$

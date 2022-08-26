@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """\
-@file head_and_arms.py
+@file head_and_arms_move.py
 @brief simple LEAP script to move the avatar
 
 $LicenseInfo:firstyear=2022&license=viewerlgpl$
