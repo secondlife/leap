@@ -2,20 +2,27 @@
 LEAP = LLSD Event API Plug-in
 ## Install python3
 ## Required modules:
-To run the simple example puppetry scripts you should execute the following command to install the module dependencies:
+To run the simple example puppetry scripts you must install the Python module dependencies.
+On **Windows** you probably want to do this in a **Windows Power Shell** terminal.
 ```
-pip3 install eventlet llbase PyGLM tkinter
+pip install eventlet llbase PyGLM tkinter
 ```
-The webcam capture scripts have more dependencies:
+The webcam capture scripts have more dependencies.
+First try to install **dlib** (a dependency of **opencv-python**) which could take a while:
 ```
-pip3 install numpy opencv-python mediapipe
+pip install dlib
 ```
-Note: the **opencv-python** module depends on **dlib** which may fail to install via **pip3** in which case it must be manually installed.
+Note: if the above fails to install **dlib** case it must be done manually.
 Instructions can be found at the the [davisking/dlib github page](https://github.com/davisking/dlib).
+
+Then install the rest of the dependencies which should Just Work:
+```
+pip install numpy opencv-python mediapipe
+```
 ## Run LEAP scripts from the viewer
 There are two ways to launch a leap script from the viewer:
 **(1)** Start the LEAP script at runtime via the menu: **Advanced --> Puppeteering --> Launch LEAP plug-in...**
-**(2)** Alternatively Launch the viewer with an command line option of the form:
+**(2)** Alternatively Launch the viewer from the command line interface (CLI) with an option of the form:
 ```
     --leap "python /path/to/script.py"
 ```
@@ -30,7 +37,8 @@ Your script will have a main loop which constantly computes new Puppetry `data` 
 
 Note: leap.py uses **eventlet** which is a module for writing **coroutines**,
 so any Python Puppetry script will have to play-well with eventlet.
-Specifically this means: your script's main loop must call `eventlet.sleep(seconds)` to yield to leap.py polling work.
+Specifically this means: your script's main loop must call `eventlet.sleep(seconds)`
+to yield to `leap.py` polling work.
 
 The format for `data` is basically:
 ```
