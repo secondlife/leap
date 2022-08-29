@@ -39,6 +39,28 @@ import traceback
 from camera import Camera
 from math import sin, cos
 
+# color = (blue, green, red)
+BLUE = (255,0,0)
+GREEN = (0,255,0)
+RED = (0,0,255)
+CYAN = (255,255,0)
+MAGENTA = (255,0,255)
+YELLOW = (0,255,255)
+ORANGE = (120,160,255)
+
+DARK_BLUE = (139,0,0)
+DARK_GREEN = (0,139,0)
+DARK_RED = (0,0,139)
+DARK_CYAN = (100,100,0)
+DARK_MAGENTA = (100,0, 100)
+DARK_YELLOW = (0,100,100)
+DARK_ORANGE = (60,80,128)
+
+WHITE = (255,255,255)
+LIGHT_GRAY = (186,186,186)
+DARK_GRAY = (64,64,64)
+BLACK = (0,0,0)
+
 try:
     import puppetry
 except ImportError as err:
@@ -103,7 +125,7 @@ class Display:
                     puppetry.log("cv2 exception resizing image: %s" % str(excp))
 
         else:
-            color = (0,0,0)
+            color = BLACK
             self.image = np.full((self.size[1], self.size[0], 3), \
                     color, dtype=np.uint8)
 
@@ -113,7 +135,7 @@ class Display:
         location = (50, 50)
 
         fontScale = 0.25 # fontScale
-        color = (0, 255, 0) # Blue color in BGR
+        color = GREEN
         thickness = 2 # Line thickness of 2 px
 
         # Using cv2.putText() method
@@ -123,7 +145,7 @@ class Display:
         except cv2.error as excp:
             puppetry.log("cv2 exception drawing text: %s" % str(excp))
 
-    def draw_landmarks(self, landmarks, color=(100,100,0)):
+    def draw_landmarks(self, landmarks, color=MAGENTA):
         '''Display the landmark set.'''
 
         if not self.display:
@@ -175,14 +197,14 @@ class Display:
                              int(point[1] * self.size[1]) )
 
                 #self.label_point( i, location)
-                color = (100, 100, 0)
+                color = CYAN
 
                 if orientation_landmarks is not None:
                     if i in orientation_landmarks:
-                        color = (0, 255, 255)
+                        color = YELLOW
                     elif i in rect_landmarks:
-                        color = (0, 0, 255)
-
+                        color = RED
+                
                 cv2.circle(self.image, location, 2, color, -1)
                 i += 1
         except OverflowError as excp:
@@ -224,7 +246,7 @@ class Display:
             point2 = ( int(nose_end_point2D[0][0][0]), \
                             int(nose_end_point2D[0][0][1]))
 
-            color = (0,0,255)       #BGR
+            color = RED
             cv2.line(self.image, point1, point2, color, 2)
 
         except cv2.error as excp:
@@ -234,7 +256,7 @@ class Display:
         ''' clear the display '''
 
         try:
-            color = (64,64,64)       #BGR
+            color = DARK_GRAY
             erase_size = (640,480)
             if self.size is not None:
                 erase_size = (self.size[0], self.size[1])
@@ -256,7 +278,7 @@ class Display:
                     display_duration = max(0.001, time.time() - start_time)
                     fps = 1 / display_duration
                     cv2.putText(self.image, f'FPS:{int(fps)}', (20, 70), \
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, GREEN, 2)
 
                 x=0
                 y=0
