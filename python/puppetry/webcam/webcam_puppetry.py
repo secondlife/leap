@@ -326,9 +326,7 @@ class Expression:
                             self.face_rot_vec, \
                             self.face_pos_vec, \
                             self.camera)
-        else:
-            return False
-        return True
+        return num_points > 0
 
     def rotate_hand(self, label, output):
         '''Set the hand rotation in a similar way to the head rotation.
@@ -452,6 +450,12 @@ class Expression:
 
             wrist_p[1] += self.neck_vertical_offset
 
+            # HACK: the measured Z-component from the MediaPipe model is unrelaible
+            # so we just slam it to a constant value, which effectively limits the
+            # hand's motion to a 2D plane.
+            HAND_Z_PLANE_OFFSET = -0.05
+            wrist_p[2] = HAND_Z_PLANE_OFFSET
+
             #Yes the following is intended, the elbow is shoulder, the wrist is the elbow
 
             #======Set the position of the elbow.======
@@ -467,6 +471,10 @@ class Expression:
 
             #======Set the position of the wrist.=======
             pose_wrist_v = self.add_vector_pose_effector('mElbow'+label, wrist_p, output)
+
+            # slam wrist to have identity local-rotation relative to its parent
+            # to avoid other animations from tweaking the wrist out of context
+            output['mWrist'+label] = { 'local_rot': [ float(0.0), float(0.0), float(0.0) ] }
 
             #quat = self.rotate_hand(label, output)
 
@@ -618,18 +626,19 @@ class Expression:
                     #The plotting window displays the captured points in a model 3D space.
                     self.plot.add_pose_landmarks(self.detected.pose_world_landmarks)
 
-                #Get the pose's face center (exclude nose).
-                self.pose_face_center = average_sequential_points(1,10, \
+                #Get the pose's face center by averaging ALL of its points, excluding nose (index=0)
+                inner_eye_left = 1
+                mouth_right = 10
+                self.pose_face_center = average_sequential_points(inner_eye_left, mouth_right, \
                                             self.avg_pose_pts)
                 #Get the pose's pelvis center
-                self.pose_pelvis_center = average_sequential_points(23,24, 
-                                            self.avg_pose_pts)
+                self.pose_pelvis_center = average_sequential_points(23, 24, self.avg_pose_pts)
 
 
                 #Average the position of the ears to create a center position for the head.
-                head_id = 9
-                other_head_id = 10
-                head_pos = average_sequential_points(head_id, other_head_id, self.avg_pose_pts)
+                ear_left = 7
+                ear_right = 8
+                head_pos = average_sequential_points(ear_left, ear_right, self.avg_pose_pts)
 
                 if self.plot is not None:
                     self.plot.add_output_point(head_pos)
@@ -637,10 +646,8 @@ class Expression:
                 #Warning:  add_vector_pose_effector modifies passed in value
                 if puppetry.part_active('head'):
                     # the "head" points are actually on the face and tend to be
-                    # too far down and forward so we push head_pos up and back
-                    DEFAULT_HEAD_VERTICAL_OFFSET = -0.10
-                    DEFAULT_HEAD_FORWARD_OFFSET = 0.23
-                    head_pos[1] += DEFAULT_HEAD_VERTICAL_OFFSET
+                    # offset on forward-axis so we adjust with a constant
+                    DEFAULT_HEAD_FORWARD_OFFSET = 0.17
                     head_pos[2] += DEFAULT_HEAD_FORWARD_OFFSET
                     #Warning:  add_vector_pose_effector modifies passed in value
                     self.add_vector_pose_effector('mHead', head_pos, data)
@@ -650,9 +657,9 @@ class Expression:
                 # WORKAROUND: we compute an approximate neck_vertical_offset in the measurement-frame
                 # and use it later to adjust measured-frame arm points before transforming to avatar's
                 # root-frame and putting Puppetry data on the wire.
-                shoulder_id = 11
-                other_shoulder_id = 12
-                self.neck_pos = average_sequential_points(shoulder_id, other_shoulder_id, self.avg_pose_pts)
+                shoulder_left = 11
+                shoulder_right = 12
+                self.neck_pos = average_sequential_points(shoulder_left, shoulder_right, self.avg_pose_pts)
 
                 # Remember: measurement-frame has y-axis pointing DOWN so negate
                 # self.expected_normalized_neck_height when computing the difference
