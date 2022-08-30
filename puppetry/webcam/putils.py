@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """\
 @file puppet_utils.py
 @brief
@@ -29,20 +28,10 @@ $/LicenseInfo$
 utility functions
 '''
 
-import argparse
-import time
 import numpy as np
 import cv2
-import itertools
-import mediapipe as mp
-import eventlet
-from camera import Camera
-from display import Display
-import sys
-import traceback
-import logging
 import glm
-from math import sin, cos, pi, sqrt, atan2, asin, acos, degrees, radians
+from math import sqrt, atan2
 
 def print_float_vectors(vec):
     '''debug function to print floating point vectors'''

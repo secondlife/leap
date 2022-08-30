@@ -54,25 +54,11 @@ There seems to be a bug ? where only sending the same line over and over does no
 '''
 
 import datetime
-import eventlet
 import logging
 import os
-import sys
-import time
 
-try:
-    import puppetry
-except ImportError as err:
-    # modify sys.path so we can find puppetry module in parent directory
-    currentdir = os.path.dirname(os.path.realpath(__file__))
-    parentdir = os.path.dirname(currentdir)
-    sys.path.append(parentdir)
-
-# now we can really import puppetry
-try:
-    import puppetry
-except ImportError as err:
-    sys.exit("Can't find puppetry module")
+import eventlet
+import puppetry
 
 # The avatar's coordinate frame:
 #          ___
@@ -202,18 +188,21 @@ def main_loop():
 
 # --------------------------------------------------------------------------
 
-puppetry.setLogLevel(logging.DEBUG)
-puppetry.start()
+def main():
+    puppetry.setLogLevel(logging.DEBUG)
+    puppetry.start()
 
-# spin the animation playback
-spinner = eventlet.spawn(main_loop)
+    # spin the animation playback
+    spinner = eventlet.spawn(main_loop)
 
-# loop the UI until puppetry is stopped
-while puppetry.isRunning():
-    # do nothing while the coroutines have all the fun
-    eventlet.sleep(0.1)
+    # loop the UI until puppetry is stopped
+    while puppetry.isRunning():
+        # do nothing while the coroutines have all the fun
+        eventlet.sleep(0.1)
 
-# cleanup
-spinner.wait()
-puppetry.stop()
+    # cleanup
+    spinner.wait()
+    puppetry.stop()
 
+if __name__ == "__main__":
+    main()

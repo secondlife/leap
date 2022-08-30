@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """\
 @file pconsts.py
 @brief

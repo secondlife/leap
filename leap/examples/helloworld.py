@@ -31,14 +31,6 @@ $/LicenseInfo$
 
 # these standard modules required
 import eventlet
-import os
-import sys
-
-# modify sys.path so we can find leap module in parent directory
-#sys.path.append(os.path.abspath('../'))
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
 import leap
 
 running = True

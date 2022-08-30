@@ -108,9 +108,9 @@ With a recent viewer, the response to `'getAPI'` (formatted for readability):
         Pass same ["source"] and ["listener"] arguments.
         Returns ["status"] boolean indicating whether such a listener existed.
 
-
-## Frameworks:
-[Python](python/README.md)
+## Plugins:
+[puppetry](puppetry/README.md)
 
 ## Examples:
-[helloworld.py](python/helloworld)
+[helloworld.py](leap/examples/)
+[puppetry](puppetry/examples/)

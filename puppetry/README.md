@@ -1,31 +1,40 @@
 # Puppetry via LEAP script
 LEAP = LLSD Event API Plug-in
-## Install python3
-## Required modules:
-To run the simple example puppetry scripts you must install the Python module dependencies.
-On **Windows** you probably want to do this in a **Windows Power Shell** terminal.
-```
-pip install eventlet llbase PyGLM tkinter
-```
-The webcam capture scripts have more dependencies.
-First try to install **dlib** (a dependency of **opencv-python**) which could take a while:
-```
-pip install dlib
-```
-Note: if the above fails to install **dlib** case it must be done manually.
-Instructions can be found at the the [davisking/dlib github page](https://github.com/davisking/dlib).
 
-Then install the rest of the dependencies which should Just Work:
+## Requirements
+
+- [python](https://www.python.org/)
+- [cmake](https://cmake.org/) (for installing dlib)
+- [git](https://git-scm.com/)
+
+### Installation
+
+Checkout the leap repository
+
 ```
-pip install numpy opencv-python mediapipe
+git clone git@bitbucket.org:lindenlab/leap.git
+cd leap
 ```
+
+**leap** and the puppetry system are provided as a python package. You can install both
+puppetry and its requirements by installing leap with the optional puppetry and opencv
+dependency lists:
+```
+pip install -e .[puppetry,opencv]
+```
+
 ## Run LEAP scripts from the viewer
+
 There are two ways to launch a leap script from the viewer:
 **(1)** Start the LEAP script at runtime via the menu: **Advanced --> Puppeteering --> Launch LEAP plug-in...**
 **(2)** Alternatively Launch the viewer from the command line interface (CLI) with an option of the form:
 ```
-    --leap "python /path/to/script.py"
+    --leap "path/to/venv/bin/python /path/to/script.py"
 ```
+
+Please note: if you want to run puppetry scripts from the **Advanced** menu then you must install them outside
+of a virtual environment so that the dependencies are accessible to python interpreter at a user or system level:
+
 ## Writing Puppetry Plug-ins
 The simplest example script is probably `arm_wave.py` which animates one arm to wave hello/goodbye,
 and is probably the best place to start, but a basic summary is:
