@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """\
 @file head_webcam.py
 @brief 
@@ -62,19 +61,7 @@ from PIL import Image, ImageDraw
 import face_recognition
 import eventlet
 
-try:
-    import puppetry
-except ImportError as err:
-    # modify sys.path so we can find puppetry module in parent directory
-    currentdir = os.path.dirname(os.path.realpath(__file__))
-    parentdir = os.path.dirname(currentdir)
-    sys.path.append(parentdir)
-
-# now we can really import puppetry
-try:
-    import puppetry
-except ImportError as err:
-    sys.exit(f"Failed to load puppetry module: err={err}")
+import puppetry
 
 CAMERA_DIMENSIONS = [ 320, 240 ]
 UPDATE_PERIOD = 0.1     # time between puppetry updates

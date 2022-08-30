@@ -1,23 +1,9 @@
 #!/usr/bin/env python3
-import eventlet
 import logging
-import os
-import sys
 import time
 
-try:
-    import puppetry
-except ImportError as err:
-    # modify sys.path so we can find puppetry module in parent directory
-    currentdir = os.path.dirname(os.path.realpath(__file__))
-    parentdir = os.path.dirname(currentdir)
-    sys.path.append(parentdir)
-
-# now we can really import puppetry
-try:
-    import puppetry
-except ImportError as err:
-    sys.exit(f"Failed to load puppetry module: err={err}")
+import eventlet
+import puppetry
 
 '''
 Note: When you debug this script at the command line it will block

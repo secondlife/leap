@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """\
 @file display.py
 @brief
@@ -26,18 +25,10 @@ $/LicenseInfo$
 """
 
 import cv2
-import eventlet
-import itertools
-import logging
-import mediapipe as mp
 import numpy as np
-import os
-import sys
 import time
-import traceback
 
-from camera import Camera
-from math import sin, cos
+import puppetry
 
 # color = (blue, green, red)
 BLUE = (255,0,0)
@@ -60,20 +51,6 @@ WHITE = (255,255,255)
 LIGHT_GRAY = (186,186,186)
 DARK_GRAY = (64,64,64)
 BLACK = (0,0,0)
-
-try:
-    import puppetry
-except ImportError as err:
-    # modify sys.path so we can find puppetry module in parent directory
-    currentdir = os.path.dirname(os.path.realpath(__file__))
-    parentdir = os.path.dirname(currentdir)
-    sys.path.append(parentdir)
-
-# now we can really import puppetry
-try:
-    import puppetry
-except ImportError as err:
-    sys.exit(f"Failed to load puppetry module: err={err}")
 
 WINDOW_NAME = "Image"
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """\
-@file head_and_arms_move.py
+@file arm_wave.py
 @brief simple LEAP script to move the avatar
 
 $LicenseInfo:firstyear=2022&license=viewerlgpl$
@@ -26,7 +26,7 @@ $/LicenseInfo$
 """
 
 '''
-head_and_arms_move.py -- use IK to animate the head and arms
+arm_wave.py -- use IK to animate the arm like it is waving hello/goodbye
 
 Run this script via viewer menu...
     Advanced --> Puppetry --> Launch LEAP plug-in...
@@ -51,27 +51,13 @@ Also, for more readable text with newlines between messages
 uncomment the print("") line in the main loop below.
 '''
 
-import eventlet
-import glm
 import logging
 import math
-import os
-import sys
 import time
 
-try:
-    import puppetry
-except ImportError as err:
-    # modify sys.path so we can find puppetry module in parent directory
-    currentdir = os.path.dirname(os.path.realpath(__file__))
-    parentdir = os.path.dirname(currentdir)
-    sys.path.append(parentdir)
-
-# now we can really import puppetry
-try:
-    import puppetry
-except ImportError as err:
-    sys.exit(f"Failed to load puppetry module: err={err}")
+import eventlet
+import glm
+import puppetry
 
 # The avatar's coordinate frame:
 #             ___
@@ -105,44 +91,23 @@ except ImportError as err:
 # end_of_shoulder_right = [ -0.0497143, -0.610328, 0.629576 ]
 # end_of_elbow_right = [ -0.0497143, -0.967967, 0.629576 ]
 # end_of_wrist_right = [ -0.0497143, -1, 0.629576 ]
+#
+# Which means... the forearm has a normalized length of approximately 0.3576
+# in the normalized space.
 
-orbit_radius = 0.236
+arm = 'left'
+#arm = 'right'
+
 orbit_period = 8.0
 wave_speed = 2.0 * math.pi / orbit_period
-
-# head will wag its local rot
-head_wag_amplitude = 0.1 * math.pi
-head_wag_period = orbit_period / 4.0
-head_wag_wave_speed = 2.0 * math.pi / head_wag_period
-
 update_period = 0.1
 
-WRIST_X = 0.0
-WRIST_Y = 1.0
-WRIST_Z = 0.63
+# elbow_tip is the same as shoulder_end
+elbow_tip = glm.vec3(-0.0497143, 0.610328, 0.629576)
+forearm_length = 0.3576
 
-HEAD_X = -0.0323
-HEAD_Y = 0.0
-HEAD_Z = 0.964
-
-# we will move each arm in a circle:
-# compute circle center, axis,
-# and planar components (up and in)
-head = glm.vec3(HEAD_X, HEAD_Y, HEAD_Z)
-neck = glm.vec3(0.0, 0.0, WRIST_Z)
-up_axis = glm.vec3(0.0, 0.0, 1.0)
-
-# pull the circle closer to the body a little bit
-left_center = glm.vec3(orbit_radius, 0.8 * WRIST_Y, 1.0 * WRIST_Z)
-left_axis = glm.normalize(left_center - neck)
-left_vertical = glm.normalize(glm.cross(left_axis, glm.cross(up_axis, left_axis)))
-left_horizontal = glm.normalize(glm.cross(left_axis, left_vertical))
-
-right_center = glm.vec3(WRIST_X, -0.8 * WRIST_Y, 1.0 * WRIST_Z)
-right_axis = glm.normalize(right_center - neck)
-right_vertical = glm.normalize(glm.cross(right_axis, glm.cross(up_axis, right_axis)))
-right_horizontal = glm.normalize(glm.cross(right_vertical, right_axis))
-
+y_axis = glm.vec3(0.0, 1.0, 0.0)
+z_axis = glm.vec3(0.0, 0.0, 1.0)
 
 t0 = time.monotonic()
 t = 0.0
@@ -155,53 +120,19 @@ def computeData(time_step):
     if t > orbit_period or t < -orbit_period:
         t -= int(t / orbit_period) * orbit_period
 
-    # compute the sinusoidal components
+    # compute wrist_tip in pelvis-frame
     theta = t * wave_speed
-    s = math.sin(theta)
-    c = math.cos(theta)
+    s = abs(math.sin(theta))
+    c = abs(math.cos(theta))
+    wrist_tip = elbow_tip + forearm_length * (c * y_axis + s * z_axis)
 
-    # compute the circle positions
-    left = left_center + (orbit_radius * s) * left_vertical + (orbit_radius * c) * left_horizontal
-
-    # compue left hand rotation:
-    # we will point the wrist bone along the axis
-    # from shoulder to wrist, with palm facing downward
-    left_lever = glm.normalize(left - neck)
-    y_axis = glm.vec3(0.0, 1.0, 0.0)
-    left_pivot = glm.normalize(glm.cross(left_lever, y_axis))
-    real_part = glm.dot(left_lever, y_axis)
-    imaginary_coef = - math.sqrt(1.0 - real_part * real_part)
-    left_q = glm.quat(real_part, imaginary_coef * left_pivot.x, imaginary_coef * left_pivot.y, imaginary_coef * left_pivot.z)
-
-    # Note: want right to be out of phase by pi, hence negate components
-    right = right_center - (orbit_radius * s) * right_vertical - (orbit_radius * c) * right_horizontal
-
-    # orbit the head position in a little circle
-    head_orbit_radius = 0.08
-    head_left = glm.vec3(0.0, 1.0, 0.0)
-    head_forward = glm.vec3(1.0, 0.0, 0.0)
-    head = 1.1* glm.vec3(HEAD_X, HEAD_Y, HEAD_Z) + (head_orbit_radius * s) * head_left + (head_orbit_radius * c) * head_forward
-
-    # wag the head using local orientation
-    head_wag = head_wag_amplitude * math.sin(t * head_wag_wave_speed)
-    head_rot = glm.quat(math.cos(0.5 * head_wag), 0.0, 0.0, math.sin(0.5 * head_wag))
-
-    # assemble the message
-    # Note: we're updating three Joints at once in distinct ways:
-    #
-    #   The end of the left wrist gets a position and orientation in pelvis frame
-    #
-    #   The end of the right elbow (e.g. the end of the forearm or tip of wrist)
-    #   gets a position in the pelvis frame, but no orientation so it just keeps
-    #   whatever local orientation supplied by other animations.
-    #
-    #   The head gets a position and a local orientation relative to parent-local
-    #
-    data = {
-        'mWristLeft':{'pos':[left.x, left.y, left.z],'rot':puppetry.packedQuaternion(left_q)},
-        'mElbowRight':{'pos':[right.x, right.y, right.z]},
-        'mHead':{'pos':[head.x, head.y, head.z], 'local_rot':puppetry.packedQuaternion(head_rot)}
-    }
+    # remember: the 'pos' always refers to the 'end' of the bone
+    # in this case it is the elbow whose 'end' is also the 'tip' of the wrist
+    if arm == 'right':
+        wrist_tip.y = - wrist_tip.y
+        data = { 'mElbowRight':{'pos':[wrist_tip.x, wrist_tip.y, wrist_tip.z]} }
+    else:
+        data = { 'mElbowLeft':{'pos':[wrist_tip.x, wrist_tip.y, wrist_tip.z]} }
     return data
 
 def spin():

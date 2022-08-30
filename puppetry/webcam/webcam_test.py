@@ -28,20 +28,8 @@ $/LicenseInfo$
 # This is a testing program for poking at the system and finding cameras.   It is not 
 # used in production
 
-# check for pygrabber
-try:
-    from pygrabber.dshow_graph import FilterGraph
-except ModuleNotFoundError as ex:
-    print(str(ex))
-    print("Try installing with 'pip install pygrabber'")
-    exit(-1)
-
-try:
-    import cv2
-except ModuleNotFoundError as ex:
-    print(str(ex))
-    print("Try installing with 'pip install opencv-python'")
-    exit(-1)
+from pygrabber.dshow_graph import FilterGraph
+import cv2
 
 # -------------------------------------------------------------------------------
 

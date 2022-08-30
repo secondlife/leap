@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """\
 @file   leap.py
 @author Nat Goodspeed

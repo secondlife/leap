@@ -75,36 +75,24 @@ and sent to the viewer via LEAP
 
 import argparse
 import cv2
-import itertools
 import glm
 import logging
 import mediapipe as mp
 import numpy as np
-import os
 import sys
 import time
 import traceback
 
+import leap # noqa: F401 import before eventlet for EVENTLET_HUB kludge
+import eventlet
 from camera import Camera
 from display import Display
 from plot import Plot
-from math import sin, cos, pi, sqrt, degrees, radians
+from math import pi, sqrt, radians
 from putils import *
 from pconsts import Model as M, LandmarkIndicies as LI
 
-try:
-    import puppetry
-except ImportError as err:
-    # modify sys.path so we can find puppetry module in parent directory
-    currentdir = os.path.dirname(os.path.realpath(__file__))
-    parentdir = os.path.dirname(currentdir)
-    sys.path.append(parentdir)
-
-# now we can really import puppetry
-try:
-    import puppetry
-except ImportError as err:
-    sys.exit(f"Failed to load puppetry module: err={err}")
+import puppetry
 
 # set up a logger sending to stderr, which gets routed to viewer logs
 LOGGER_FORMAT = "%(filename)s:%(lineno)s %(funcName)s: %(message)s"
@@ -735,7 +723,7 @@ class Expression:
             pass
 
 
-def main(camera_num = 0):
+def run(camera_num = 0):
     '''pylint wants to docstring for the main function'''
     # _logger.setLevel(logging.DEBUG)
 
@@ -752,7 +740,8 @@ def main(camera_num = 0):
     face.main_loop()
     puppetry.stop()
 
-if __name__ == "__main__":
+
+def main():
     """ Deal with command line arguments """
 
     parser = argparse.ArgumentParser(description='Second Life face motion capture',
@@ -761,4 +750,8 @@ if __name__ == "__main__":
         default=0, help='Camera device number to use')
     args = parser.parse_args()
 
-    main(camera_num = int(args.camera_number))
+    run(camera_num = int(args.camera_number))
+
+
+if __name__ == "__main__":
+    main()

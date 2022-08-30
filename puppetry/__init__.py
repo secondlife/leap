@@ -6,7 +6,7 @@
 $LicenseInfo:firstyear=2022&license=viewerlgpl$
 Second Life Viewer Source Code
 Copyright (C) 2022, Linden Research, Inc.
- 
+
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation;
@@ -65,27 +65,13 @@ $/LicenseInfo$
 '''
 
 import datetime
-import eventlet
 import logging
 import math
-import os
 import sys
-import glm # pip install PyGLM
-from llbase import llsd
 
-try:
-    import leap
-except ImportError as err:
-    # modify sys.path so we can find leap module in parent directory
-    currentdir = os.path.dirname(os.path.realpath(__file__))
-    parentdir = os.path.dirname(currentdir)
-    sys.path.append(parentdir)
-
-# now we can really import leap
-try:
-    import leap
-except ImportError as err:
-    sys.exit(f"Failed to import leap module: err={err}")
+import glm
+import leap
+import eventlet
 
 CONTROLLER_PUMP = 'puppetry.controller'
 
