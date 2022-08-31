@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """\
 @file display.py
 @brief
@@ -182,7 +183,7 @@ class Display:
                     elif i in rect_landmarks:
                         color = RED
                 
-                cv2.circle(self.image, location, 2, color, -1)
+                cv2.circle(self.image, location, 1, color, -1)
                 i += 1
         except OverflowError as excp:
             puppetry.log("OverflowError exception drawing landmark points: %s" % (str(excp), point))
