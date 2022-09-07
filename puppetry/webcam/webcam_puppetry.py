@@ -109,6 +109,22 @@ NUM_FACE_POINTS = 468
 NUM_HAND_POINTS =  21
 NUM_POSE_POINTS =  32
 
+# precompute webcam_to_puppetry transforms
+# used by Expression.compute_hand_orientation()
+Q_webcam_to_puppetry = glm.quat(glm.mat3(\
+        glm.vec3(0.0, 0.0, -1.0),\
+        glm.vec3(1.0, 0.0, 0.0),\
+        glm.vec3(0.0, -1.0, 0.0)))
+Q_webcam_to_puppetry_inv = glm.inverse(Q_webcam_to_puppetry)
+
+# precompute left- and right-hand-offset rotations 
+# used by Expression.compute_hand_orientation()
+half_pi = 0.5 * pi
+y_axis = glm.vec3(0.0, 1.0, 0.0)
+z_axis = glm.vec3(0.0, 0.0, 1.0)
+Q_left_hand_offset = glm.angleAxis(-half_pi, y_axis) * glm.angleAxis(-half_pi, z_axis)
+Q_right_hand_offset = glm.angleAxis(-half_pi, y_axis) * glm.angleAxis(half_pi, z_axis)
+
 class Expression:
     '''The Expression class manages mapping input from
         face tracking to the leap puppetry stream'''
@@ -316,53 +332,62 @@ class Expression:
                             self.camera)
         return num_points > 0
 
-    def rotate_hand(self, label, output):
-        '''Set the hand rotation in a similar way to the head rotation.
-            We need 5 points that maintain a relatively stable relationship
-            to one another.  The wrist and bases of the fingers make 4 but
-            the thumb moves around a bit too much so we are simply going to 
-            take the the distance and direction from the index base to 
-            the pinky base and copy that to a new point relative the 
-            wrist and call it the heel of the palm'''
+    def compute_hand_orientation(self, label):
+        # measure the hand axes
+        wrist_id = 0
+        index_base_id = 5
+        pinky_base_id = 17
+        wrist_pos = glm.vec3(self.avg_hand_pts[label][wrist_id])
+        index_pos = glm.vec3(self.avg_hand_pts[label][index_base_id])
+        pinky_pos = glm.vec3(self.avg_hand_pts[label][pinky_base_id])
+        middle_pos = 0.5 * (index_pos + pinky_pos)
+        fingers_axis = glm.normalize(middle_pos - wrist_pos)
+        thumb_axis = index_pos - pinky_pos
+        palm_normal = glm.normalize(glm.cross(fingers_axis, thumb_axis))
+        thumb_axis = glm.cross(palm_normal, fingers_axis)
+        '''
+                  .''.
+               .''|  |''.
+               |  |  |  |''.
+               |  |  |  |  |
+               |  |  |  |  |
+               |           |
+              .'       z   '.               z                   y z
+        .''-. |       /     |               |                   |/
+        '-.  '--     @--x   |               @--y             x--@
+           '-.       |      .              /
+              '---   y    .'              x
+                |        |
+                |        |
+            webcam-capture-frame    avatar-root-frame    hand-local-frame
+        '''
 
-        #Get direction across the finger bases.
-        palm_dir = get_direction(self.avg_hand_pts[label][LI.fingerbases['Index']], \
-                                 self.avg_hand_pts[label][LI.fingerbases['Pinky']] )
-        #Create a hand heel position from wrist and fingerbases direction.
-        for idx in range(0,3):
-            self.avg_hand_pts[label][NUM_HAND_POINTS][idx] = \
-                self.avg_hand_pts[label][0][idx] + palm_dir[idx]
+        # the delta rotation of the hand (relative to facing the camera) can
+        # be obtained by supplying the xyz axes as the columns of a mat3
+        x = -thumb_axis
+        y = -fingers_axis
+        z = -palm_normal
+        if label == "Right":
+            x = thumb_axis
+            z = palm_normal
+        dq = glm.quat(glm.mat3(x, y, z))
 
-        #Find rotation of the hand.
-        max_degrees = 90
-        rot_vec, pos_vec, rot = \
-            self.find_model_rotation(self.avg_hand_pts[label], M.hand_points[label], LI.hand_orientation, max_degrees)
+        # we want the delta-rotation of the hand in the avatar-root-frame
+        # which is given by the transformation formula:
+        #     dQ = Q * dq * Q^
+        # where Q = rotation from avatar-root-frame to webcam-capture-frame
+        dQ = Q_webcam_to_puppetry_inv * dq * Q_webcam_to_puppetry
 
-        if abs(rot[0]) <= max_degrees and abs(rot[1]) <= max_degrees and abs(rot[2]) <= max_degrees:
-            self.hand_rot_ea[label] = get_weighted_average_vec( rot, self.hand_rot_ea[label], self.rotation_smoothing )
-
-        #Fix the rotation for the viewer.  This should be fine since it is quat rotations.
-        nrot = self.hand_rot_ea[label].copy()
-
-        #Flip directions
-        nrot[0] *= -1.0
-        #nrot[1] *= 1.0
-        #nrot[2] *= -1.0
-
-        packed_quaternion = puppetry.packedQuaternionFromEulerAngles( \
-                                float(radians(nrot[0])), \
-                                float(radians(nrot[1])), \
-                                float(radians(nrot[2]))  \
-                             )
-        #puppetry.log("Hand Rot: %.3f %.3f %.3f" % ( self.hand_rot_ea[label][0] * -1.0, self.hand_rot_ea[label][1], self.hand_rot_ea[label][2] * 1.0 ) )
-
-        joint_name = 'mWrist'+label
-        if joint_name in output:
-            output[joint_name]['rot'] = packed_quaternion
-        else:
-            output[joint_name] = { 'rot':packed_quaternion }
-
-        return glm.quat(nrot)
+        # finally, the delta rotation is applied AFTER an offset
+        # to get from hand-local to facing the camera;
+        #     Q = dQ * Q_offset
+        # Note the order of operations: in GLM the Quaternion operates
+        # normally from the LEFT on a hypothetical vec3 on the RIGHT,
+        # hence Q_offset is rightmost because it operates first.
+        Q_offset = Q_left_hand_offset
+        if label == "Right":
+            Q_offset = Q_right_hand_offset
+        return dQ * Q_offset
 
     def handle_hand(self, label, output):
         '''Handles the finer points of the hand
@@ -458,13 +483,12 @@ class Expression:
             #output[joint_name]['no_constraint'] = True      #Unneeded; example of disabling a constraint
 
             #======Set the position of the wrist.=======
-            pose_wrist_v = self.add_vector_pose_effector('mElbow'+label, wrist_p, output)
+            joint_name = 'mWrist'+label
+            pose_wrist_v = self.add_vector_pose_effector(joint_name, wrist_p, output)
 
-            # slam wrist to have identity local-rotation relative to its parent
-            # to avoid other animations from tweaking the wrist out of context
-            output['mWrist'+label] = { 'local_rot': [ float(0.0), float(0.0), float(0.0) ] }
-
-            #quat = self.rotate_hand(label, output)
+            #======Set the orientation of the wrist.=======
+            hand_q = self.compute_hand_orientation(label)
+            output[joint_name]['rot'] = puppetry.packedQuaternion(hand_q)
 
             if self.plot is not None:
                 elbow = self.avg_pose_pts[elbow_id].copy()
@@ -503,13 +527,7 @@ class Expression:
 
             hand_ratio *= 0.5       #Unclear why but our scale ended up wrong.  Just hack it for now.
 
-            axial_correction = glm.quat( glm.vec3( 0.5 * pi, 0.0 * pi , 0.0 * pi ) )
-
-            #avg_wrist_dir = get_direction( self.avg_pose_pts[wrist_id], \
-            #                        ( self.avg_pose_pts[index_id] + self.avg_pose_pts[pinky_id] ) )
-            #avg_wrist_v = np.array(axial_correction * avg_wrist_dir)
-            #avg_wrist_v *= hand_ratio
-            #self.create_relative_effector('mWrist'+label, pose_wrist_v, avg_wrist_v, output)
+            axial_correction = glm.quat( glm.vec3(half_pi, 0.0, 0.0) )
 
             for key in LI.fingertips:
                 tip_v = self.avg_hand_pts[label][LI.fingertips[key]]    #This fingertip in the hand.
