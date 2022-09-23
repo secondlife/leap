@@ -54,7 +54,7 @@ os.environ['EVENTLET_THREADPOOL_SIZE'] = '2'
 # On Mac with Python 3.9, we must use the poll hub rather than the
 # default kevent hub.
 # https://github.com/eventlet/eventlet/issues/670
-if platform.system() == 'Darwin' and sys.version_info[:2] >= (3, 9):
+if platform.system() == 'Darwin' and sys.version_info[:2] == (3, 9):
     os.environ['EVENTLET_HUB'] = 'poll'
 from eventlet import tpool
 
