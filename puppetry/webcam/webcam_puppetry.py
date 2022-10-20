@@ -109,13 +109,13 @@ NUM_FACE_POINTS = 468
 NUM_HAND_POINTS =  21
 NUM_POSE_POINTS =  32
 
-# precompute webcam_to_puppetry transforms
+# precompute puppetry_to_webcam transforms
 # used by Expression.compute_hand_orientation()
-Q_webcam_to_puppetry = glm.quat(glm.mat3(\
+Q_puppetry_to_webcam = glm.quat(glm.mat3(\
         glm.vec3(0.0, 0.0, -1.0),\
         glm.vec3(1.0, 0.0, 0.0),\
         glm.vec3(0.0, -1.0, 0.0)))
-Q_webcam_to_puppetry_inv = glm.inverse(Q_webcam_to_puppetry)
+Q_puppetry_to_webcam_inv = glm.inverse(Q_puppetry_to_webcam)
 
 # precompute left- and right-hand-offset rotations 
 # used by Expression.compute_hand_orientation()
@@ -376,7 +376,7 @@ class Expression:
         # which is given by the transformation formula:
         #     dQ = Q * dq * Q^
         # where Q = rotation from avatar-root-frame to webcam-capture-frame
-        dQ = Q_webcam_to_puppetry_inv * dq * Q_webcam_to_puppetry
+        dQ = Q_puppetry_to_webcam_inv * dq * Q_puppetry_to_webcam
 
         # finally, the delta rotation is applied AFTER an offset
         # to get from hand-local to facing the camera;
