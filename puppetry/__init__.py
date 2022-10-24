@@ -154,22 +154,11 @@ def isRunning():
     """ True if puppetry is running, False to quit """
     return _running
 
-
-def sendPuppetryData(data):
-    """ Send puppetry data to the viewer """
+def _sendLeapRequest(data):
+    """ Once gets and sets are wrapped up, send them. """
     if _running:
-        data = data.copy()
-
-        command = data.get('command', None)
-        if not command:
-            # unless caller explicitly passed some other command, infer "move"
-            data['command'] = 'move'
-        elif command != 'move':
-            # only set a request ID for non-"move" commands: "move" is most of
-            # the traffic, and it needs no reply
-            data.setdefault('reqid', get_next_request_id())
-
         try:
+            _logger.info("SPATTERS SLR Sending: ", data)
             leap.request('puppetry', data)
 
             # Diagnostic data logging
@@ -187,6 +176,15 @@ def sendPuppetryData(data):
             _logger.info(f"failed data='{data}' err='{e}'")
     else:
         _logger.info('puppetry not running')
+
+def sendGet(data):
+    """ Send a get request to the viewer """
+    if _running:
+        msg = { 'command':'get', 'get':data }
+
+        msg.setdefault('reqid', get_next_request_id())
+
+        _sendLeapRequest(msg)
 
 @registerCommand("stop")
 def stop(args = None):
