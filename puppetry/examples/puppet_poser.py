@@ -163,7 +163,7 @@ def puppetry_coroutine():
         start_time = cur_time
         data = read_data()
         if data:
-            puppetry.sendPuppetryData(data)
+            puppetry.sendSet({"inverse_kinematics":data})
             #puppetry.log(f"sent {data}")
         #print("") # uncomment this when debugging at command-line
 

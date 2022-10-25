@@ -158,7 +158,6 @@ def _sendLeapRequest(data):
     """ Once gets and sets are wrapped up, send them. """
     if _running:
         try:
-            _logger.info("SPATTERS SLR Sending: ", data)
             leap.request('puppetry', data)
 
             # Diagnostic data logging
@@ -181,6 +180,15 @@ def sendGet(data):
     """ Send a get request to the viewer """
     if _running:
         msg = { 'command':'get', 'get':data }
+
+        msg.setdefault('reqid', get_next_request_id())
+
+        _sendLeapRequest(msg)
+
+def sendSet(data):
+    """ Send a set request to the viewer """
+    if _running:
+        msg = { 'command':'set', 'set':data }
 
         msg.setdefault('reqid', get_next_request_id())
 

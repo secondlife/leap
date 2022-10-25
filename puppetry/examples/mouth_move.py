@@ -190,7 +190,7 @@ def puppetry_coroutine():
         delta_time = t1 - t0
         t0 = t1
         data = computeData(delta_time)
-        puppetry.sendPuppetryData(data)
+        puppetry.sendSet({"inverse_kinematics":data})
         #print("") # uncomment this when debugging at command-line
 
 # start the real work

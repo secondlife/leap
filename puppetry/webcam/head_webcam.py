@@ -261,7 +261,7 @@ class Expression:
                         flags=cv2.cv2.SOLVEPNP_ITERATIVE)
 
             data = self.generate_expression( img_size )
-            puppetry.sendPuppetryData(data)
+            puppetry.sendSet({"inverse_kinematics":data})
             #print("") # uncomment this line when debugging at CLI
 
             #Show the frame we captured and draw the detection onto it.
