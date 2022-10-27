@@ -24,7 +24,7 @@ t = 0.0
 def computeData(time_step):
     global t
     t += time_step
-    # supported fields are 'pos', 'rot', 'local_rot'
+    # supported fields are 'pos', 'rot'
     # 'scale' is not yet supported
     data = { 'mJointName':{'pos':[0.123, 0.456, 0.789]} }
     return data
