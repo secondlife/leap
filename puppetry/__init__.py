@@ -179,7 +179,10 @@ def _sendLeapRequest(data):
 def sendGet(data):
     """ Send a get request to the viewer """
     if _running:
-        msg = { 'command':'get', 'get':data }
+        if isinstance(data, list):
+            msg = { 'command':'set', 'set':data }
+        else:
+            msg = { 'command':'set', 'set':(data) }
 
         msg.setdefault('reqid', get_next_request_id())
 
@@ -188,7 +191,10 @@ def sendGet(data):
 def sendSet(data):
     """ Send a set request to the viewer """
     if _running:
-        msg = { 'command':'set', 'set':data }
+        if isinstance(data, list):
+            msg = { 'command':'set', 'set':data }
+        else:
+            msg = { 'command':'set', 'set':(data) }
 
         msg.setdefault('reqid', get_next_request_id())
 
