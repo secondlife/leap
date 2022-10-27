@@ -179,10 +179,18 @@ def _sendLeapRequest(data):
 def sendGet(data):
     """ Send a get request to the viewer """
     if _running:
-        if isinstance(data, list):
+        #Force our message to be a dict.
+        if isinstance(data, dict):
             msg = { 'command':'set', 'set':data }
+        elif isinstance(data,tuple) or isinstance(data,list) or isinstance(data,set):
+            #handle list types.
+            od = {}
+            for o in data:
+                od[o] = None
+            msg = { 'command':'set', 'set':od }
         else:
-            msg = { 'command':'set', 'set':(data) }
+            #Treat every else as simple string or num and let the viewer sort it out.
+            msg = { 'command':'set', 'set':{data:None} }
 
         msg.setdefault('reqid', get_next_request_id())
 
@@ -191,10 +199,18 @@ def sendGet(data):
 def sendSet(data):
     """ Send a set request to the viewer """
     if _running:
-        if isinstance(data, list):
+        #Force our message to be a dict.
+        if isinstance(data, dict):
             msg = { 'command':'set', 'set':data }
+        elif isinstance(data,tuple) or isinstance(data,list) or isinstance(data,set):
+            #handle list types.
+            od = {}
+            for o in data:
+                od[o] = None
+            msg = { 'command':'set', 'set':od }
         else:
-            msg = { 'command':'set', 'set':(data) }
+            #Treat every else as simple string or num and let the viewer sort it out.
+            msg = { 'command':'set', 'set':{data:None} }
 
         msg.setdefault('reqid', get_next_request_id())
 

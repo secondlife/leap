@@ -201,9 +201,12 @@ def computeData(time_step):
     #   The head gets a position and a local orientation relative to parent-local
     #
     data = {
-        'mWristLeft':{'pos':[left.x, left.y, left.z],'rot':puppetry.packedQuaternion(left_q)},
-        'mElbowRight':{'pos':[right.x, right.y, right.z]},
-        'mHead':{'pos':[head.x, head.y, head.z], 'local_rot':puppetry.packedQuaternion(head_rot)}
+        'inverse_kinematics':{
+            'mWristLeft':{'position':[left.x, left.y, left.z],'rotation':puppetry.packedQuaternion(left_q)},
+            'mElbowRight':{'position':[right.x, right.y, right.z]},
+            'mHead':{'position':[head.x, head.y, head.z]}},
+        'joint_state': {
+            'mHead':{'rotation':puppetry.packedQuaternion(head_rot)} }
     }
     return data
 
@@ -217,7 +220,7 @@ def spin():
         delta_time = t1 - t0
         t0 = t1
         data = computeData(delta_time)
-        puppetry.sendSet({"inverse_kinematics":data})
+        puppetry.sendSet(data)
         #print("") # uncomment this when debugging at command-line
 
 puppetry.setLogLevel(logging.DEBUG)
