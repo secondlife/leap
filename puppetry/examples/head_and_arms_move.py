@@ -59,22 +59,7 @@ import time
 import eventlet
 import glm
 import os
-
-try:
-    import puppetry
-except ImportError as err:
-    # modify sys.path so we can find puppetry module in parent directory
-    currentdir = os.path.dirname(os.path.realpath(__file__))
-    parentdir = os.path.dirname(currentdir)
-    sys.path.append(parentdir)
-    parentdir = os.path.dirname(parentdir)
-    sys.path.append(parentdir)
-
-# now we can really import puppetry
-try:
-    import puppetry
-except ImportError as err:
-    sys.exit("Can't find puppetry module")
+import puppetry
 
 # The avatar's coordinate frame:
 #             ___
