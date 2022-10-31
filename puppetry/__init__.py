@@ -177,44 +177,38 @@ def _sendLeapRequest(data):
         _logger.info('puppetry not running')
 
 def sendGet(data):
-    """ Send a get request to the viewer """
+    """ Send a get request to the viewer
+          data can be a single string, or a list/tuple of strings
+    """
     if _running:
-        #Force our message to be a dict.
-        if isinstance(data, dict):
-            msg = { 'command':'get', 'get':data }
-        elif isinstance(data, (tuple, list, set)):
-            #handle list types.
-            od = {}
-            for o in data:
-                od[o] = None
-            msg = { 'command':'get', 'get':od }
+        data_out = []
+        if isinstance(data, str):
+            data_out = [data]
+        elif isinstance(data, list):
+            data_out = data
+        elif isinstance(data, tuple):
+            for item in data:
+                if isinstance(item, str):
+                    data_out.append(item)
         else:
-            #Treat every else as simple string or num and let the viewer sort it out.
-            msg = { 'command':'get', 'get':{data:None} }
-
-        msg.setdefault('reqid', get_next_request_id())
-
-        _sendLeapRequest(msg)
+            _logger.info(f"malformed 'get' data={data}")
+            return
+        if data_out:
+            msg = { 'command':'get', 'get':data_out}
+            msg.setdefault('reqid', get_next_request_id())
+            _sendLeapRequest(msg)
 
 def sendSet(data):
-    """ Send a set request to the viewer """
+    """ Send a set request to the viewer
+            data must be a dict
+    """
     if _running:
-        #Force our message to be a dict.
         if isinstance(data, dict):
             msg = { 'command':'set', 'set':data }
-        elif isinstance(data, (tuple, list, set)):
-            #handle list types.
-            od = {}
-            for o in data:
-                od[o] = None
-            msg = { 'command':'set', 'set':od }
+            msg.setdefault('reqid', get_next_request_id())
+            _sendLeapRequest(msg)
         else:
-            #Treat every else as simple string or num and let the viewer sort it out.
-            msg = { 'command':'set', 'set':{data:None} }
-
-        msg.setdefault('reqid', get_next_request_id())
-
-        _sendLeapRequest(msg)
+            _logger.info(f"malformed 'set' data={data}")
 
 @registerCommand("stop")
 def stop(args = None):
@@ -277,7 +271,7 @@ def set_skeleton(args):
         skeleton_data = skeleton_dict
 
 def get_skeleton_data(name):
-    """Looks for toplevel field named name in skeleton_data
+    """Looks for toplevel field named 'name' in skeleton_data
         returns None if not found, otherwise data."""
 
     if type(skeleton_data) is dict:
