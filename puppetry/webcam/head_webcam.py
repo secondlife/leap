@@ -36,7 +36,7 @@ The joint data is a dictionary with the following format:
 Where:
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "local_rot" | "rot" | "pos" | "scale"
+    type = "rot" | "pos" | "scale"
     type's value = array of three floats (e.g. [x,y,z])
 Multiple joints can be combined into the same dictionary.
 
@@ -261,7 +261,7 @@ class Expression:
                         flags=cv2.cv2.SOLVEPNP_ITERATIVE)
 
             data = self.generate_expression( img_size )
-            puppetry.sendPuppetryData(data)
+            puppetry.sendSet({"inverse_kinematics":data})
             #print("") # uncomment this line when debugging at CLI
 
             #Show the frame we captured and draw the detection onto it.

@@ -154,21 +154,9 @@ def isRunning():
     """ True if puppetry is running, False to quit """
     return _running
 
-
-def sendPuppetryData(data):
-    """ Send puppetry data to the viewer """
+def _sendLeapRequest(data):
+    """ Once gets and sets are wrapped up, send them. """
     if _running:
-        data = data.copy()
-
-        command = data.get('command', None)
-        if not command:
-            # unless caller explicitly passed some other command, infer "move"
-            data['command'] = 'move'
-        elif command != 'move':
-            # only set a request ID for non-"move" commands: "move" is most of
-            # the traffic, and it needs no reply
-            data.setdefault('reqid', get_next_request_id())
-
         try:
             leap.request('puppetry', data)
 
@@ -187,6 +175,40 @@ def sendPuppetryData(data):
             _logger.info(f"failed data='{data}' err='{e}'")
     else:
         _logger.info('puppetry not running')
+
+def sendGet(data):
+    """ Send a get request to the viewer
+          data can be a single string, or a list/tuple of strings
+    """
+    if _running:
+        data_out = []
+        if isinstance(data, str):
+            data_out = [data]
+        elif isinstance(data, list):
+            data_out = data
+        elif isinstance(data, tuple):
+            for item in data:
+                if isinstance(item, str):
+                    data_out.append(item)
+        else:
+            _logger.info(f"malformed 'get' data={data}")
+            return
+        if data_out:
+            msg = { 'command':'get', 'get':data_out}
+            msg.setdefault('reqid', get_next_request_id())
+            _sendLeapRequest(msg)
+
+def sendSet(data):
+    """ Send a set request to the viewer
+            data must be a dict
+    """
+    if _running:
+        if isinstance(data, dict):
+            msg = { 'command':'set', 'set':data }
+            msg.setdefault('reqid', get_next_request_id())
+            _sendLeapRequest(msg)
+        else:
+            _logger.info(f"malformed 'set' data={data}")
 
 @registerCommand("stop")
 def stop(args = None):
@@ -249,7 +271,7 @@ def set_skeleton(args):
         skeleton_data = skeleton_dict
 
 def get_skeleton_data(name):
-    """Looks for toplevel field named name in skeleton_data
+    """Looks for toplevel field named 'name' in skeleton_data
         returns None if not found, otherwise data."""
 
     if type(skeleton_data) is dict:

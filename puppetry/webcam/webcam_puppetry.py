@@ -37,7 +37,7 @@ The joint data is a dictionary with the following format:
 Where:
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "local_rot" | "rot" | "pos" | "scale"
+    type = "rot" | "pos" | "scale"
     type's value = array of three floats (e.g. [x,y,z])
 Multiple joints can be combined into the same dictionary.
 
@@ -551,7 +551,7 @@ class Expression:
            TODO:  Move mediapipe into a thread to get around blocking
         '''
 
-        puppetry.sendPuppetryData(dict(command='send_skeleton'))    #Request skeleton
+        puppetry.sendGet('skeleton')    #Request skeleton
         retries = 3
         end_time = time.time() + 2.0
 
@@ -566,7 +566,7 @@ class Expression:
                 retries = retries - 1
                 end_time = cur_time + 3.0
                 if retries > 0:
-                    puppetry.sendPuppetryData(dict(command='send_skeleton'))    #Re-request skeleton data.
+                    puppetry.sendGet('skeleton')    #Re-request skeleton data.
         return False
 
 
@@ -696,7 +696,7 @@ class Expression:
             if True:                                                                    #Process single camera frame per frame for less resource consumption
                 if success:
                     #Send the puppetry info to viewer first.
-                    puppetry.sendPuppetryData(data)
+                    puppetry.sendSet({"inverse_kinematics":data})
 
                     # have an image from the camera, use it
                     self.display.do_display(track_start_time)

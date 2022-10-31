@@ -36,7 +36,7 @@ The joint data is a dictionary with the following format:
 Where:
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "local_rot" | "rot" | "pos" | "scale"
+    type = "rot" | "pos" | "scale"
     type's value = array of three floats (e.g. [x,y,z])
 Multiple joints can be combined into the same dictionary.
 
@@ -145,7 +145,7 @@ def spin():
         delta_time = t1 - t0
         t0 = t1
         data = computeData(delta_time)
-        puppetry.sendPuppetryData(data)
+        puppetry.sendSet({"inverse_kinematics":data})
         #print("") # uncomment this when debugging at command-line
 
 puppetry.setLogLevel(logging.DEBUG)
