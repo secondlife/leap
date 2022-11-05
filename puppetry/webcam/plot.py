@@ -23,8 +23,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
 $/LicenseInfo$
 """
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plot
+from mpl_toolkits.mplot3d import Axes3D
+
 
 class Plot:
     '''Plots landmarks in a -1 to 1 space.'''
@@ -36,7 +37,7 @@ class Plot:
         self.output_pts = [ [], [], [] ]    #Points being sent to viewer.
         self.perp_pts = [ [], [], [] ]      #Perpendiculars for rotations to viewer.
 
-        plot.ion()      #Turn on interactive mode 
+        plot.ion()      #Turn on interactive mode
         #The figsize=(5,5) somehow sets the window size
         self.figure = plot.figure(figsize=(5,5))
 

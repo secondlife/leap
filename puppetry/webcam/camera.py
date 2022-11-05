@@ -24,8 +24,9 @@ Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
 $/LicenseInfo$
 """
 
-import numpy as np
 import cv2
+import numpy as np
+
 
 class Camera:
     '''A utility class to manage the camera and captured images'''

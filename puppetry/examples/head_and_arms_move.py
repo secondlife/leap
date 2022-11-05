@@ -6,7 +6,7 @@
 $LicenseInfo:firstyear=2022&license=viewerlgpl$
 Second Life Viewer Source Code
 Copyright (C) 2022, Linden Research, Inc.
- 
+
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation;
@@ -53,12 +53,13 @@ uncomment the print("") line in the main loop below.
 
 import logging
 import math
+import os
 import sys
 import time
 
 import eventlet
 import glm
-import os
+
 import puppetry
 
 # The avatar's coordinate frame:

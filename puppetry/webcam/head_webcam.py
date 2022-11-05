@@ -1,11 +1,11 @@
 """\
 @file head_webcam.py
-@brief 
+@brief
 
 $LicenseInfo:firstyear=2022&license=viewerlgpl$
 Second Life Viewer Source Code
 Copyright (C) 2022, Linden Research, Inc.
- 
+
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation;
@@ -55,11 +55,12 @@ uncomment the print("") line in the main loop below.
 '''
 
 import time
-import numpy as np
+
 import cv2
-from PIL import Image, ImageDraw
-import face_recognition
 import eventlet
+import face_recognition
+import numpy as np
+from PIL import Image, ImageDraw
 
 import puppetry
 
@@ -198,7 +199,7 @@ class Expression:
         #print ("Rotation Vector:\n {0}".format(self.face_rot_vec))
         #print ("Translation Vector:\n {0}".format(self.face_pos_vec))
 
-        yaw = float(self.face_rot_vec[1][0] * 1.0) 
+        yaw = float(self.face_rot_vec[1][0] * 1.0)
         pitch = float(self.face_rot_vec[0][0] + 3.2)
         roll = float(self.face_rot_vec[2][0] * -1.0)
         packed_quaternion = puppetry.packedQuaternionFromEulerAngles(yaw, pitch, roll)
@@ -270,7 +271,7 @@ class Expression:
             # Hit 'q' on the keyboard to quit!
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-            
+
             # sleep for eventlet coroutines
             t1 = time.monotonic()
             compute_time = t1 - t0

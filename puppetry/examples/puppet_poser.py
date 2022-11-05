@@ -64,8 +64,9 @@ import math
 import os
 import time
 
-import glm
 import eventlet
+import glm
+
 import puppetry
 
 # The avatar's head coordinate frame:

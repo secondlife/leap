@@ -54,15 +54,15 @@ string into the script's stdin:
 
 #Overview
 '''
-webcam_puppetry is an example of using LEAP to control the avatar in the Second 
-Life viewer via live feed from a webcam processed through OpenCV 
+webcam_puppetry is an example of using LEAP to control the avatar in the Second
+Life viewer via live feed from a webcam processed through OpenCV
 (https://opencv.org) and Mediapipe (https://google.github.io/mediapipe/)
 
-In brief, OpenCV manages most of the webcam capture and windowing/displaying 
+In brief, OpenCV manages most of the webcam capture and windowing/displaying
 the image and overlays.  It also provides tools for translating a perspective
-view to a 3D view.  Mediapipe 
+view to a 3D view.  Mediapipe
 
-Like the other example scripts, webcam capture has the same general structure 
+Like the other example scripts, webcam capture has the same general structure
 for initializing the puppetry interface and communicationing with the viewer. To
 animate the avatar, openCV is used to capture images from the camera.
 
@@ -74,24 +74,25 @@ and sent to the viewer via LEAP
 '''
 
 import argparse
-import cv2
-import glm
 import logging
-import mediapipe as mp
-import numpy as np
 import sys
 import time
 import traceback
+from math import pi, radians, sqrt
 
-import leap # noqa: F401 import before eventlet for EVENTLET_HUB kludge
+import cv2
 import eventlet
+import glm
+import mediapipe as mp
+import numpy as np
 from camera import Camera
 from display import Display
+from pconsts import LandmarkIndicies as LI
+from pconsts import Model as M
 from plot import Plot
-from math import pi, sqrt, radians
 from putils import *
-from pconsts import Model as M, LandmarkIndicies as LI
 
+import leap  # noqa: F401 import before eventlet for EVENTLET_HUB kludge
 import puppetry
 
 # set up a logger sending to stderr, which gets routed to viewer logs
@@ -117,7 +118,7 @@ Q_puppetry_to_webcam = glm.quat(glm.mat3(\
         glm.vec3(0.0, -1.0, 0.0)))
 Q_puppetry_to_webcam_inv = glm.inverse(Q_puppetry_to_webcam)
 
-# precompute left- and right-hand-offset rotations 
+# precompute left- and right-hand-offset rotations
 # used by Expression.compute_hand_orientation()
 half_pi = 0.5 * pi
 y_axis = glm.vec3(0.0, 1.0, 0.0)
@@ -178,7 +179,7 @@ class Expression:
         #self.display.display_fps   = False     #Set True for estimated capture frames per second.
         #self.display.mirror = False            #Set True to flip display window left to right
 
-        # PLOT: Plot is a primitive debug tool which displays the captured points in a 
+        # PLOT: Plot is a primitive debug tool which displays the captured points in a
         # rotatable 3D space.
         DO_PLOT = False     #Display a plot window with captured points in a 3D space
 
@@ -250,7 +251,7 @@ class Expression:
         ''' Before make_zyx_effector() the data is in the "webcam capture frame"
         but it gets transformed into the SL-avatar frame.
                         ___
-                       /o o\ 
+                       /o o\
                        \___/
                          |
              R o--+--+-+ | +-+--+--o L
@@ -393,7 +394,7 @@ class Expression:
         '''Handles the finer points of the hand
         The webcam capture coordinate frame is:
                     ___
-                   /o o\ 
+                   /o o\
                    \___/
                      |
          R o--+--+-+ | +-+--+--o L
@@ -472,10 +473,10 @@ class Expression:
             #Yes the following is intended, the elbow is shoulder, the wrist is the elbow
 
             #======Set the position of the elbow.======
-            #In the viewer, sending the shoulder position automatically disables the 
+            #In the viewer, sending the shoulder position automatically disables the
             #constraint.  Additionally, for two consecutive joints positions sent to the
             #viewer, the viewer shall automatically take the direction from child to parent
-            #and adjust the position of the parent target to be exactly the bone-length 
+            #and adjust the position of the parent target to be exactly the bone-length
             #distance from the child.
 
             #joint_name = 'mShoulder'+label
@@ -543,10 +544,10 @@ class Expression:
         '''On startup, mediapipe blocks heavily, temporarily disrupting leap communication
            So here we'll request/wait for skeleton data from the viewer before continuing.
 
-           NOTE: After skeleton data is received, we continue on.  The first frame of 
+           NOTE: After skeleton data is received, we continue on.  The first frame of
            webcam capture may still be blocking, which means there is a small window of time
-           where if the agent changes skeletons in the viewer, this information may not 
-           be obtained by this plug-in module. 
+           where if the agent changes skeletons in the viewer, this information may not
+           be obtained by this plug-in module.
 
            TODO:  Move mediapipe into a thread to get around blocking
         '''
@@ -603,7 +604,7 @@ class Expression:
 
             face = None
             if self.camera.get_rgb_frame():     #Get a frame of capture from the camera
-                #Holistic performs detection of meshes for the body pose and key points in 
+                #Holistic performs detection of meshes for the body pose and key points in
                 #the hands and face
                 self.detected = self.holistic.process(self.camera.rgb_image)    #Detect forms
             else:
@@ -685,10 +686,10 @@ class Expression:
             track_compute_time = cur_time - track_start_time
             frame_compute_time = cur_time - frame_start_time
 
-            #Tracking time shouldn't vary much.  To get the smoothest data, 
+            #Tracking time shouldn't vary much.  To get the smoothest data,
             #Process as many tracking frames as we can within a leap frame
             #and average the data.  Tracking computation times shouldn't vary
-            #much so we'll presume that if there's more than 1.5x the time it 
+            #much so we'll presume that if there's more than 1.5x the time it
             #took to do this tracking, there's time to fetch another frame.
             #If not, send the data and prep for next frame.
 

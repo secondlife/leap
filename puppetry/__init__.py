@@ -69,9 +69,10 @@ import logging
 import math
 import sys
 
-import glm
-import leap
 import eventlet
+import glm
+
+import leap
 
 CONTROLLER_PUMP = 'puppetry.controller'
 
@@ -243,7 +244,7 @@ def set_camera(args):
 # This command selects the camera device number used by a puppetry module
 
 def part_active(name):
-    """Returns True if the viewer has the named part marked as 
+    """Returns True if the viewer has the named part marked as
        active."""
     if name in part_names:
         return (part_names[name] & parts_mask)
@@ -335,7 +336,7 @@ def unpackedQuaternion(xyz):
 def _handleCommand(message):
     """  Process message as a dict from the viewer
     message = { data: { command: 'foo', args: { ... } }, pump: ... }
-    
+
     Default handled commands are:
         stop
         log

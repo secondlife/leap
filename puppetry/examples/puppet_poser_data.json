@@ -1,8 +1,8 @@
 {
 	"#comment": "json doesn't support comments, but any keys starting with # will be dropped",
-    
+
     "#Note": "If you use the # comment ability on the lines below, you can make some basic hand positions and gestures",
-    
+
     "#Note": "The following is a list of the 133 bones in the SL avatar, ignored by the poser because of the leading # in the name.",
 	"#Note": "You can copy and/or edit to experiment with applying rotations and see what they do to your avatar.",
 	"#Note": "The results will, of course, depend on how your avatar body, face and hands are rigged.  Not all bones are used.",
@@ -148,15 +148,15 @@
     "mCollarRight": {"rot":[0.2, 0.0, 0.3]},
     "mShoulderRight": {"rot":[0.35, 0.0, 0.0]},
     "mElbowRight": {"rot":[-0.9, 0.0, 0.3]},
-    
+
     "#wrist": "Palm facing in and out",
 	"#mWristRight": {"rot": [0.0, 1.0, 0.0]},
-    "mWristRight": {"rot": [0.0, -0.5, 0.0]}, 
+    "mWristRight": {"rot": [0.0, -0.5, 0.0]},
 
-    "mHandIndex1Right": {"rot": [0.0, 0.0, 0.0]}, "mHandIndex2Right": {"rot": [0.0131, 0.0, 0.0]}, "mHandIndex3Right": {"rot": [0.0105, 0.00439, 0.0]}, 
+    "mHandIndex1Right": {"rot": [0.0, 0.0, 0.0]}, "mHandIndex2Right": {"rot": [0.0131, 0.0, 0.0]}, "mHandIndex3Right": {"rot": [0.0105, 0.00439, 0.0]},
     "mHandMiddle1Right": {"rot": [0.0, 0.0, 0.0]}, "mHandMiddle2Right": {"rot": [0.0142, 0.0, 0.0]}, "mHandMiddle3Right": {"rot": [0.0113, 0.000658, 0.0]},
-    "mHandRing1Right": {"rot": [0.6, -0.01, 0.0]}, "mHandRing2Right": {"rot": [0.649, -0.132, 0.0]}, "mHandRing3Right": {"rot": [0.5367638468742371, -0.109, 0.0]}, 
-	"mHandPinky1Right": {"rot": [0.7, -0.190, 0.0]}, "mHandPinky2Right": {"rot": [0.591, -0.299, 0.0]}, "mHandPinky3Right": {"rot": [0.488, -0.247, 0.0]}, 
+    "mHandRing1Right": {"rot": [0.6, -0.01, 0.0]}, "mHandRing2Right": {"rot": [0.649, -0.132, 0.0]}, "mHandRing3Right": {"rot": [0.5367638468742371, -0.109, 0.0]},
+	"mHandPinky1Right": {"rot": [0.7, -0.190, 0.0]}, "mHandPinky2Right": {"rot": [0.591, -0.299, 0.0]}, "mHandPinky3Right": {"rot": [0.488, -0.247, 0.0]},
    	"mHandThumb1Right": {"rot": [0.0, 0.50, 0.0]}, "mHandThumb2Right": {"rot": [0.1, 0.370, -0.0323]}, "mHandThumb3Right": {"rot": [0.487, 0.447, -0.0391]},
 
 

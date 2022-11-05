@@ -44,12 +44,14 @@ $/LicenseInfo$
 """
 
 import errno
-import re
-import sys
-from llbase import llsd
 # We only expect to need one helper thread; the default is 20.
 import os
 import platform
+import re
+import sys
+
+from llbase import llsd
+
 os.environ['EVENTLET_THREADPOOL_SIZE'] = '2'
 # On Mac with Python 3.9, we must use the poll hub rather than the
 # default kevent hub.
