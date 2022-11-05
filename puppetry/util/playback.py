@@ -1,31 +1,7 @@
 #!/usr/bin/env python3
-"""\
-@file playback.py
-@brief simple LEAP script to read a data file and move the avatar
-
-$LicenseInfo:firstyear=2022&license=viewerlgpl$
-Second Life Viewer Source Code
-Copyright (C) 2022, Linden Research, Inc.
- 
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation;
-version 2.1 of the License only.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
-$/LicenseInfo$
 """
+simple LEAP script to read a data file and move the avatar
 
-'''
 This script uses the LEAP framework for sending messages to the viewer that 
 are read from a file.
 
@@ -51,7 +27,7 @@ as 'puppet_data.txt' next to your viewer executable
 {'mHead': {'rot': [-0.07448343932628632, 0.06885180622339249, -0.035997889935970306]}, 'mWristLeft': {'pos': [0.05, 0.16729896764942478, 0.5361882011149134]}, 'mHandThumb3Left': {'pos': [0.06574690041785626, 0.12442234070665525, 0.5685525689166656]}, 'mHandIndex3Left': {'pos': [0.06662216794813625, 0.14029842110667906, 0.6212556577420765]}, 'mHandMiddle3Left': {'pos': [0.06620718293644166, 0.15229872926471846, 0.6300273446697175]}, 'mHandRing3Left': {'pos': [0.0670738089351241, 0.1642334542108759, 0.6287173451620537]}, 'mHandPinky3Left': {'pos': [0.06639558466617584, 0.18190129982428496, 0.6160302439715732]}, 'command': 'move', 'time': '2022-05-06 17:23:57.888231+00:00'}
 
 There seems to be a bug ? where only sending the same line over and over does not position correctly, but alternating between these two data sets works fine.
-'''
+"""
 
 import datetime
 import logging

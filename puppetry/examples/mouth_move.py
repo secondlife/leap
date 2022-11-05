@@ -1,32 +1,6 @@
 #!/usr/bin/env python3
-"""\
-@file mouth_move.py
-@brief simple LEAP script to move the avatar's mouth
-
-$LicenseInfo:firstyear=2022&license=viewerlgpl$
-Second Life Viewer Source Code
-Copyright (C) 2022, Linden Research, Inc.
- 
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation;
-version 2.1 of the License only.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
-$/LicenseInfo$
 """
-
-'''
-mouth_move.py -- use puppetry to animate the mouth
+simple LEAP script to move the avatar's mouth
 
 Run this script via viewer menu...
     Advanced --> Puppetry --> Launch LEAP plug-in...
@@ -49,7 +23,7 @@ string into the script's stdin:
 
 Also, for more readable text with newlines between messages
 uncomment the print("") line in the main loop below.
-'''
+"""
 
 import math
 import time
