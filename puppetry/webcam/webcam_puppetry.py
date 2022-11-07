@@ -1,31 +1,5 @@
 #!/usr/bin/env python3
-"""\
-@file webacam_puppetry.py
-@brief
-
-$LicenseInfo:firstyear=2022&license=viewerlgpl$
-Second Life Viewer Source Code
-Copyright (C) 2022, Linden Research, Inc.
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation;
-version 2.1 of the License only.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
-$/LicenseInfo$
 """
-
-'''
 This script uses the LEAP framework for sending messages to the viewer.
 Tell the viewer to launch it with the following option:
     --leap "python /path/to/this/script/this_script.py"
@@ -50,10 +24,8 @@ string into the script's stdin:
 
 119:{'data':{'command':'18ce5015-b651-1d2e-2470-0de841fd3635', \
      'features':{}},'pump':'54481a53-c41f-4fc2-606e-516daed03636'}
-'''
 
-#Overview
-'''
+# Overview
 webcam_puppetry is an example of using LEAP to control the avatar in the Second 
 Life viewer via live feed from a webcam processed through OpenCV 
 (https://opencv.org) and Mediapipe (https://google.github.io/mediapipe/)
@@ -71,7 +43,7 @@ pose hands and face
 
 Avatar position and rotation information is extracted from the mediapipe data
 and sent to the viewer via LEAP
-'''
+"""
 
 import argparse
 import cv2
