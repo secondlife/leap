@@ -1,30 +1,4 @@
-"""\
-@file head_webcam.py
-@brief 
-
-$LicenseInfo:firstyear=2022&license=viewerlgpl$
-Second Life Viewer Source Code
-Copyright (C) 2022, Linden Research, Inc.
- 
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation;
-version 2.1 of the License only.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
-$/LicenseInfo$
 """
-
-'''
 This script uses the LEAP framework for sending messages to the viewer.
 Tell the viewer to launch it with the following option:
     --leap "python /path/to/this/script/this_script.py"
@@ -51,15 +25,16 @@ string into the script's stdin:
 
 Also, for more readable text with newlines between messages
 uncomment the print("") line in the main loop below.
+"""
 
-'''
 
 import time
-import numpy as np
+
 import cv2
-from PIL import Image, ImageDraw
-import face_recognition
 import eventlet
+import face_recognition
+import numpy as np
+from PIL import Image, ImageDraw
 
 import puppetry
 
@@ -198,7 +173,7 @@ class Expression:
         #print ("Rotation Vector:\n {0}".format(self.face_rot_vec))
         #print ("Translation Vector:\n {0}".format(self.face_pos_vec))
 
-        yaw = float(self.face_rot_vec[1][0] * 1.0) 
+        yaw = float(self.face_rot_vec[1][0] * 1.0)
         pitch = float(self.face_rot_vec[0][0] + 3.2)
         roll = float(self.face_rot_vec[2][0] * -1.0)
         packed_quaternion = puppetry.packedQuaternionFromEulerAngles(yaw, pitch, roll)
@@ -270,7 +245,7 @@ class Expression:
             # Hit 'q' on the keyboard to quit!
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-            
+
             # sleep for eventlet coroutines
             t1 = time.monotonic()
             compute_time = t1 - t0

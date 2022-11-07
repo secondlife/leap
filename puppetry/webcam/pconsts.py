@@ -1,34 +1,9 @@
-"""\
-@file pconsts.py
-@brief
-
-$LicenseInfo:firstyear=2022&license=viewerlgpl$
-Second Life Viewer Source Code
-Copyright (C) 2022, Linden Research, Inc.
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation;
-version 2.1 of the License only.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
-$/LicenseInfo$
-"""
-
 import numpy as np
+
 
 class Model:
     '''Model contains data that pertains to a generic notion of a person
-       in T-Pose and provides a frame of reference for comparision against 
+       in T-Pose and provides a frame of reference for comparision against
        the live-capture'''
 
     #Key points on the face that we use for identifying the rotation
@@ -43,7 +18,7 @@ class Model:
 
     #Key points on the hands we use for identifying the rotation. wrist+base of fingers
     #NOTE:  There is no 'Heel' in the model. This is created by taking the wrist position
-    #and adding Pinky1.x - Index1.x to X.   
+    #and adding Pinky1.x - Index1.x to X.
     #L/R U/D Z
     hand_points = {
         'Left': np.array([

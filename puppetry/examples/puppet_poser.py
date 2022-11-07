@@ -1,30 +1,7 @@
 #!/usr/bin/env python3
-"""\
-@file puppet_poser.py
-@brief Simple LEAP script to read a data file and send puppetry data.
+"""
+Simple LEAP script to read a data file and send puppetry data.
 The file is re-read every cycle, so can be live edited to see changes
-
-$LicenseInfo:firstyear=2022&license=viewerlgpl$
-Second Life Viewer Source Code
-Copyright (C) 2022, Linden Research, Inc.
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation;
-version 2.1 of the License only.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
-$/LicenseInfo$
-
 
 This script uses the LEAP framework for sending messages to the viewer.
 Tell the viewer to launch it with the following option:
@@ -54,7 +31,6 @@ string into the script's stdin:
 
 Also, for more readable text with newlines between messages
 uncomment the print("") line in the main loop below.
-
 """
 
 import copy
@@ -64,8 +40,9 @@ import math
 import os
 import time
 
-import glm
 import eventlet
+import glm
+
 import puppetry
 
 # The avatar's head coordinate frame:
