@@ -1,8 +1,5 @@
-"""\
-@file   leap.py
-@author Nat Goodspeed
-@date   2012-03-14
-@brief  Python implementation of LEAP (LLSD Event API Plugin) protocol
+"""
+Python implementation of LEAP (LLSD Event API Plugin) protocol
 
 This module supports Python scripts used as viewer LEAP plugins. Every such
 script must be able to send to stdout, and receive on stdin, LEAP protocol.
@@ -37,10 +34,6 @@ where:
 In addition to the above, each line written to stderr is logged to the
 viewer's log -- but our consumer script needs no special support from us to
 write to stderr.
-
-$LicenseInfo:firstyear=2012&license=viewerlgpl$
-Copyright (c) 2012, Linden Research, Inc.
-$/LicenseInfo$
 """
 
 import errno
