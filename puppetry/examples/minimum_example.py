@@ -5,7 +5,7 @@ import time
 import eventlet
 import puppetry
 
-'''
+"""
 Note: When you debug this script at the command line it will block
 because the leap.py framework is waiting for the initial message
 from the viewer.  To unblock the system paste the following
@@ -15,7 +15,7 @@ string into the script's stdin:
 
 Also when debugging, for more readable text with newlines between
 messages uncomment the print("") line in the main loop below.
-'''
+"""
 
 update_period = 0.1
 t0 = time.monotonic()
