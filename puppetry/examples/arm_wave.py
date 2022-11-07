@@ -35,6 +35,7 @@ import time
 
 import eventlet
 import glm
+
 import puppetry
 
 # The avatar's coordinate frame:

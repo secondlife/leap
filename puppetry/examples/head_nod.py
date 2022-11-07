@@ -31,16 +31,17 @@ import math
 import time
 
 import eventlet
+
 import puppetry
 
 # The avatar's head coordinate frame:
 #
 #             ______       turn(z)
-#            /o   o \       | 
+#            /o   o \       |
 #           |   C    |      @-nod(Y)
 #           |  ---   |     /
 #            \______/   tilt(X)
-#               |       
+#               |
 #     R-+-+-+-+ | +-+-+-+-L
 #               +
 #               |

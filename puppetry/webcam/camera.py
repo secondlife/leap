@@ -1,5 +1,6 @@
-import numpy as np
 import cv2
+import numpy as np
+
 
 class Camera:
     '''A utility class to manage the camera and captured images'''

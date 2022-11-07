@@ -2,7 +2,7 @@
 """
 simple LEAP script to read a data file and move the avatar
 
-This script uses the LEAP framework for sending messages to the viewer that 
+This script uses the LEAP framework for sending messages to the viewer that
 are read from a file.
 
 To create a data file:
@@ -16,7 +16,7 @@ To create a data file:
     * Rename that to 'puppet_data.txt'  or change that name in this file
     * Use the "Launch LEAP plug-in" command and pick this module
 
-Here is a sample data set, which may or may not be correct captured data.   This was taken from the 
+Here is a sample data set, which may or may not be correct captured data.   This was taken from the
 webcam with the left hand raised, elbow at about a 90 degree angle, forearm vertical.   Save it
 as 'puppet_data.txt' next to your viewer executable
 
@@ -34,6 +34,7 @@ import logging
 import os
 
 import eventlet
+
 import puppetry
 
 # The avatar's coordinate frame:
@@ -80,14 +81,14 @@ def read_puppet_data(data_file_name):
                         # to do - ignore lines starting with '#'
                         #       - handle the time value
                         puppet_data.append(cur_line.strip())
-        
+
         except Exception as exp:
             puppetry.log("exception reading data file: %s" % str(exp))
             puppetry.log("*** Check the file in %s" % os.path.join(os.getcwd(), data_file_name))
 
     if puppet_data is not None:
         num_lines = len(puppet_data)
-         
+
     return num_lines
 
 # --------------------------------------------------------------------------
@@ -116,7 +117,7 @@ def fetch_puppetry_data(line_num):
 def main_loop():
     """ read and send data until stopped """
     global current_line_num
-    
+
     num_lines = read_puppet_data(data_file_name)
     if num_lines < 2:
         puppetry.log("Must have at least two lines of puppetry data, exiting")

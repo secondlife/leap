@@ -1,8 +1,8 @@
 {
 	"#comment": "json doesn't support comments, but any keys starting with # will be dropped",
-    
+
     "#Note": "If you use the # comment ability on the lines below, you can make some basic hand positions and gestures",
-    
+
     "#Note": "The following is a list of the 133 bones in the SL avatar, ignored by the poser because of the leading # in the name.",
 	"#Note": "You can copy and/or edit to experiment with applying rotations and see what they do to your avatar.",
 	"#Note": "Positioning data can be 'r' or 'rotation',  'p' or 'position', and 's' or 'scale'",
@@ -150,7 +150,7 @@
     "mCollarRight": {"r":[0.2, 0.0, 0.3]},
     "mShoulderRight": {"r":[0.35, 0.0, 0.0]},
     "mElbowRight": {"r":[-0.9, 0.0, 0.3]},
-    
+
     "#wrist": "Palm facing in and out",
 	"#mWristRight": {"r": [0.0, 1.0, 0.0]},
     "mWristRight": {"r": [0.0, -0.5, 0.0]},

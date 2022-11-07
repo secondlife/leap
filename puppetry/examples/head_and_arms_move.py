@@ -29,12 +29,13 @@ uncomment the print("") line in the main loop below.
 
 import logging
 import math
+import os
 import sys
 import time
 
 import eventlet
 import glm
-import os
+
 import puppetry
 
 # The avatar's coordinate frame:

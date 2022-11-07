@@ -30,16 +30,17 @@ import time
 
 import eventlet
 import glm
+
 import puppetry
 
 # The avatar's head coordinate frame:
 #
 #             ______       turn(z)
-#            /o   o \       | 
+#            /o   o \       |
 #           |   C    |      @-nod(Y)
 #           |  ---   |     /
 #            \______/   tilt(X)
-#               |       
+#               |
 #     R-+-+-+-+ | +-+-+-+-L
 #               +
 #               |
@@ -70,7 +71,7 @@ import puppetry
 #  f  mFaceLipLowerLeft local_pos={ 0.045, 0, 0 }
 #  g  mFaceLipLowerRight local_pos={ 0.045, 0, 0 }
 #  h  mFaceLipLowerCenter local_pos={ 0.045, 0, 0 }
-# 
+#
 
 # hard-coded axis of rotation for lip movement
 SMILE_AXIS = glm.normalize(glm.vec3(0.5, 0.0, 1.0))

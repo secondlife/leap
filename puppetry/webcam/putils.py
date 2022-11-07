@@ -2,10 +2,12 @@
 utility functions
 """
 
-import numpy as np
+from math import atan2, sqrt
+
 import cv2
 import glm
-from math import sqrt, atan2
+import numpy as np
+
 
 def print_float_vectors(vec):
     '''debug function to print floating point vectors'''
@@ -16,7 +18,7 @@ def print_float_vectors(vec):
 
 
 def make_zxy_effector( name, point, output ):
-    '''Switches point to from webcam-capture-frame 
+    '''Switches point to from webcam-capture-frame
     to SL-avatar-frame.
                 ___
                /o o\
@@ -60,7 +62,7 @@ def quat_to_euler(quat):
     GIMBAL_THRESHOLD = 0.000436
     HALF_PI =  1.5707963267949
 
-    pitch = 2 
+    pitch = 2
     yaw   = 3
     roll  = 1
 
@@ -127,7 +129,7 @@ def rotate_point(origin, point, rot):
     dir = get_direction( origin, point )    #Direction from origin point to arbitary point
     mag = magnitude(dir)                    #Distance from origin to poiont
     dir = normalize(dir)
-    ndir= rotate_vector(dir, rot)           #Rotate normalized vector 
+    ndir= rotate_vector(dir, rot)           #Rotate normalized vector
     for d in ndir:
         d *= mag
     return ndir
@@ -171,7 +173,7 @@ def get_dimensions(points, indicies):
         xs.append(points[index][0])
         ys.append(points[index][1])
         zs.append(points[index][2])
-            
+
     minx = min(xs)
     miny = min(ys)
     minz = min(zs)
@@ -180,8 +182,8 @@ def get_dimensions(points, indicies):
     maxz = max(zs)
 
     result={ 'min' : [minx,miny,minz],
-             'max' : [maxx,maxy,maxz], 
-             'height' : maxx-minx, 
+             'max' : [maxx,maxy,maxz],
+             'height' : maxx-minx,
              'width'  : maxy-miny,
              'depth'  : maxz-minz }
     result['center'] = [ minx + result['width']/2.0, \
@@ -198,13 +200,13 @@ def make_perpendicular(origin, point1, point2, distance):
     #Normalized direction from orign to points on a plane
     dir1 = np.array( normalize( get_direction(origin, point1) ) )
     dir2 = np.array( normalize( get_direction(origin, point2) ) )
-       
+
     perp_dir = np.cross(dir1, dir2) #Cross product is perp direction
 
     return origin + (distance * perp_dir)
 
 def make_perpendicular_from_quat(origin, quat, distance):
-    '''Create a point relative the origin in the direction 
+    '''Create a point relative the origin in the direction
        of the passed in quaternion at the specified distance.'''
     return None     #stubbed
 
@@ -212,7 +214,7 @@ def make_perpendicular_from_subset(points, ids, distance):
     '''Passed the set of points, extracts the 3 ids passed in
        as a list, assuming the first is origin and the other
        two non-colinear points.
-       Returns a point perpendicular to the origin at the 
+       Returns a point perpendicular to the origin at the
        specified distance.'''
 
     p2 = []
@@ -288,7 +290,7 @@ def average_landmarks(landmarks, dest, dlen, weight):
                             landmarks.landmark[index].y, \
                             landmarks.landmark[index].z ]
         else:
-            dest[index] = get_weighted_average_vec( 
+            dest[index] = get_weighted_average_vec(
                           [ landmarks.landmark[index].x, \
                             landmarks.landmark[index].y, \
                             landmarks.landmark[index].z ], \
@@ -301,7 +303,7 @@ def average_sequential_landmarks(start, end, landmarks):
        points is the dataset the indicies are found in.
        retuns [ x, y, z ] averaged.'''
 
-    num = (end - start) + 1 
+    num = (end - start) + 1
     avg = [ 0.0, 0.0, 0.0 ]
     for p in range(start,end+1):
         avg[0] = avg[0] + landmarks.landmark[p].x
@@ -317,7 +319,7 @@ def average_sequential_points(start, end, points):
        points is the dataset the indicies are found in.
        retuns [ x, y, z ] averaged.'''
 
-    num = (end - start) + 1 
+    num = (end - start) + 1
     avg = [ 0.0, 0.0, 0.0 ]
     for p in range(start,end+1):
         for a in range (0,3):
@@ -378,9 +380,9 @@ def get_perspective_matrix(ortho, indicies, live_data):
 
     numi = len(indicies)
     live = np.zeros([numi,2], dtype="float32")
-    
+
     for i in range(0, numi):
         live[i][0] = live_data[indicies[i]][0]
         live[i][1] = live_data[indicies[i]][1]
 
-    return cv2.getPerspectiveTransform(live, ortho) 
+    return cv2.getPerspectiveTransform(live, ortho)

@@ -9,6 +9,7 @@ Simple LEAP script which will send a message to SecondLifeViewer every second
 
 # these standard modules required
 import eventlet
+
 import leap
 
 running = True

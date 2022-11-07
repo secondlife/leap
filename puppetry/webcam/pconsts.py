@@ -1,8 +1,9 @@
 import numpy as np
 
+
 class Model:
     '''Model contains data that pertains to a generic notion of a person
-       in T-Pose and provides a frame of reference for comparision against 
+       in T-Pose and provides a frame of reference for comparision against
        the live-capture'''
 
     #Key points on the face that we use for identifying the rotation
@@ -17,7 +18,7 @@ class Model:
 
     #Key points on the hands we use for identifying the rotation. wrist+base of fingers
     #NOTE:  There is no 'Heel' in the model. This is created by taking the wrist position
-    #and adding Pinky1.x - Index1.x to X.   
+    #and adding Pinky1.x - Index1.x to X.
     #L/R U/D Z
     hand_points = {
         'Left': np.array([

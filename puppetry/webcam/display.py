@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import time
 
 import puppetry
 
@@ -155,7 +154,7 @@ class Display:
                         color = YELLOW
                     elif i in rect_landmarks:
                         color = RED
-                
+
                 cv2.circle(self.image, location, 1, color, -1)
                 i += 1
         except OverflowError as excp:
