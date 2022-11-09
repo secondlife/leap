@@ -1,7 +1,31 @@
 #!/usr/bin/env python3
-"""
-Simple framework for sending puppetry data to SL viewer
+"""\
+@file puppetry.py
+@brief simple framework for sending puppetry data to SL viewer
 
+$LicenseInfo:firstyear=2022&license=viewerlgpl$
+Second Life Viewer Source Code
+Copyright (C) 2022, Linden Research, Inc.
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation;
+version 2.1 of the License only.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
+$/LicenseInfo$
+"""
+
+'''
 This module uses the LEAP framework for sending messages to the SL viewer.
 
 Tell the viewer to launch some script.py with the following option:
@@ -34,17 +58,20 @@ leap.py module is waiting for the initial message from the viewer.  To unblock
 the system paste the following string into the script's stdin:
 
 119:{'data':{'command':'18ce5015-b651-1d2e-2470-0de841fd3635','features':{}},'pump':'54481a53-c41f-4fc2-606e-516daed03636'}
-"""
+
+$LicenseInfo:firstyear=2022&license=viewerlgpl$
+Copyright (c) 2022, Linden Research, Inc.
+$/LicenseInfo$
+'''
 
 import datetime
 import logging
 import math
 import sys
 
-import eventlet
 import glm
-
 import leap
+import eventlet
 
 CONTROLLER_PUMP = 'puppetry.controller'
 
@@ -127,11 +154,11 @@ def isRunning():
     """ True if puppetry is running, False to quit """
     return _running
 
-def _sendLeapRequest(data):
+def sendLeapRequest(namespace,data):
     """ Once gets and sets are wrapped up, send them. """
     if _running:
         try:
-            leap.request('puppetry', data)
+            leap.request(namespace, data)
 
             # Diagnostic data logging
             if _save_data_log:
@@ -148,6 +175,10 @@ def _sendLeapRequest(data):
             _logger.info(f"failed data='{data}' err='{e}'")
     else:
         _logger.info('puppetry not running')
+
+def _sendPuppetryRequest(data):
+    """ Once gets and sets are wrapped up, send them. """
+    sendLeapRequest('puppetry', data)
 
 def sendGet(data):
     """ Send a get request to the viewer
@@ -169,7 +200,7 @@ def sendGet(data):
         if data_out:
             msg = { 'command':'get', 'get':data_out}
             msg.setdefault('reqid', get_next_request_id())
-            _sendLeapRequest(msg)
+            _sendPuppetryRequest(msg)
 
 def sendSet(data):
     """ Send a set request to the viewer
@@ -179,7 +210,7 @@ def sendSet(data):
         if isinstance(data, dict):
             msg = { 'command':'set', 'set':data }
             msg.setdefault('reqid', get_next_request_id())
-            _sendLeapRequest(msg)
+            _sendPuppetryRequest(msg)
         else:
             _logger.info(f"malformed 'set' data={data}")
 
@@ -216,7 +247,7 @@ def set_camera(args):
 # This command selects the camera device number used by a puppetry module
 
 def part_active(name):
-    """Returns True if the viewer has the named part marked as
+    """Returns True if the viewer has the named part marked as 
        active."""
     if name in part_names:
         return (part_names[name] & parts_mask)
@@ -308,7 +339,7 @@ def unpackedQuaternion(xyz):
 def _handleCommand(message):
     """  Process message as a dict from the viewer
     message = { data: { command: 'foo', args: { ... } }, pump: ... }
-
+    
     Default handled commands are:
         stop
         log
