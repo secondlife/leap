@@ -198,7 +198,7 @@ def sendGet(data):
             _logger.info(f"malformed 'get' data={data}")
             return
         if data_out:
-            msg = { 'command':'get', 'get':data_out}
+            msg = { 'command':'get', 'data':data_out}
             msg.setdefault('reqid', get_next_request_id())
             _sendPuppetryRequest(msg)
 
@@ -208,7 +208,7 @@ def sendSet(data):
     """
     if _running:
         if isinstance(data, dict):
-            msg = { 'command':'set', 'set':data }
+            msg = { 'command':'set', 'data':data }
             msg.setdefault('reqid', get_next_request_id())
             _sendPuppetryRequest(msg)
         else:
