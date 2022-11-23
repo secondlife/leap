@@ -177,7 +177,7 @@ def sendSet(data):
     """
     if _running:
         if isinstance(data, dict):
-            msg = { 'command':'set', 'data':data }
+            msg = { 'command':'set', 'd':data }     # use 'd' or 'data'
             msg.setdefault('reqid', get_next_request_id())
             _sendLeapRequest(msg)
         else:
