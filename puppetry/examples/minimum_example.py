@@ -25,9 +25,9 @@ t = 0.0
 def computeData(time_step):
     global t
     t += time_step
-    # supported fields are 'pos', 'rot'
+    # supported fields are 'position', 'rotation'
     # 'scale' is not yet supported
-    data = { 'mJointName':{'pos':[0.123, 0.456, 0.789]} }
+    data = { 'mJointName':{'position':[0.123, 0.456, 0.789]} }
     return data
 
 def spin():

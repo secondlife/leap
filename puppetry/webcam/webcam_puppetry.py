@@ -461,7 +461,7 @@ class Expression:
 
             #======Set the orientation of the wrist.=======
             hand_q = self.compute_hand_orientation(label)
-            output[joint_name]['rot'] = puppetry.packedQuaternion(hand_q)
+            output[joint_name]['r'] = puppetry.packedQuaternion(hand_q)
 
             if self.plot is not None:
                 elbow = self.avg_pose_pts[elbow_id].copy()
@@ -479,7 +479,7 @@ class Expression:
         return  #Forced finger disable
 
         if puppetry.part_active('fingers'):
-            debug_wrist_v = output['mElbow'+label]['pos']
+            debug_wrist_v = output['mElbow'+label]['p']
 
             hand_wrist_v =  self.avg_hand_pts[label][0]     #Position from hand
 
@@ -510,7 +510,7 @@ class Expression:
                 joint_name = "mHand" + key + "3" + label
                 self.create_relative_effector(joint_name, pose_wrist_v, tip_d, output)
 
-                dist = magnitude ( distance_3d(debug_wrist_v, output[joint_name]['pos'] ) )
+                dist = magnitude ( distance_3d(debug_wrist_v, output[joint_name]['p'] ) )
 
     def get_initial_skeleton(self):
         '''On startup, mediapipe blocks heavily, temporarily disrupting leap communication

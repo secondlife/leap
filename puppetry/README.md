@@ -54,9 +54,9 @@ The format for `data` is basically:
 data = {'mJointName':{'field_name':value, ...}, ...}
 ```
 Where: `mJointName` is something like `'mWristLeft'`,
-`field_name` is: `'pos'`, `'rot'`, or `'local_rot'`,
-and `value` is either an array of Cartesian coordinates `[x,y,z]` for `pos`
-or the imaginary part `[x,y,z]` of a Quaternion (when it has a positive real component `w`) for `rot` and `local_rot`.
+`field_name` is: `'position'` or `'rotation'`,
+and `value` is either an array of Cartesian coordinates `[x,y,z]` for `position`
+or the imaginary part `[x,y,z]` of a Quaternion (when it has a positive real component `w`) for `rotation`.
 `field_name:value` can also be `'no_constraint':1` to disable constraint for that Joint.
 
 It is recommended you use the **PyGLM** module for 3D math.

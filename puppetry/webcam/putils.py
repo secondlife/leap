@@ -39,9 +39,9 @@ def make_zxy_effector( name, point, output ):
     '''
     pos = [ float( -point[2] ), float( point[0] ), float( -point[1] )  ]
     if name in output:
-        output[name]['pos'] = pos
+        output[name]['p'] = pos
     else:
-        output[name] = { 'pos' : pos }
+        output[name] = { 'p' : pos }
 
     return
 

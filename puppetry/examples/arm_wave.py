@@ -14,7 +14,7 @@ The joint data is a dictionary with the following format:
 Where:
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "rot" | "pos" | "scale"
+    type = "rotation" | "position" | "scale"
     type's value = array of three floats (e.g. [x,y,z])
 Multiple joints can be combined into the same dictionary.
 
@@ -105,13 +105,13 @@ def computeData(time_step):
     c = abs(math.cos(theta))
     wrist_tip = elbow_tip + forearm_length * (c * y_axis + s * z_axis)
 
-    # remember: the 'pos' always refers to the 'end' of the bone
+    # remember: the 'position' always refers to the 'end' of the bone
     # in this case it is the elbow whose 'end' is also the 'tip' of the wrist
     if arm == 'right':
         wrist_tip.y = - wrist_tip.y
-        data = { 'mElbowRight':{'pos':[wrist_tip.x, wrist_tip.y, wrist_tip.z]} }
+        data = { 'mElbowRight':{'position':[wrist_tip.x, wrist_tip.y, wrist_tip.z]} }
     else:
-        data = { 'mElbowLeft':{'pos':[wrist_tip.x, wrist_tip.y, wrist_tip.z]} }
+        data = { 'mElbowLeft':{'position':[wrist_tip.x, wrist_tip.y, wrist_tip.z]} }
     return data
 
 def spin():

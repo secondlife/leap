@@ -15,7 +15,7 @@ Where:
     joint_name = string recognized by viewer routine
     LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "local_rot" | "rot" | "pos" | "scale"
+    type = "rotation" | "position" | "scale"
     type's value = array of three floats (e.g. [x,y,z])
 Multiple joints can be combined into the same dictionary.
 

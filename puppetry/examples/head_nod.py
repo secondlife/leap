@@ -12,7 +12,7 @@ The joint data is a dictionary with the following format:
 Where:
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "rot" | "pos" | "scale"
+    type = "rotation" | "position" | "scale"
     type's value = array of three floats (e.g. [x,y,z])
 Multiple joints can be combined into the same dictionary.
 
@@ -106,7 +106,7 @@ def computeData(time_step):
     # assemble the message
     packed_rot = puppetry.packedQuaternionFromEulerAngles(tilt, nod, turn)
     data = {
-        'mHead':{'local_rot': packed_rot}
+        'mHead':{'rotation': packed_rot}
     }
     return data
 

@@ -10,7 +10,7 @@ The joint data is a dictionary with the following format:
 Where:
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "rot" | "pos" | "scale"
+    type = "rotation" | "position" | "scale"
     type's value = array of three floats (e.g. [x,y,z])
 Multiple joints can be combined into the same dictionary.
 
@@ -79,8 +79,8 @@ SMILE_AXIS = glm.normalize(glm.vec3(0.5, 0.0, 1.0))
 class Smile:
     def __init__(self):
         self.joints = {}
-        self.joints['mFaceLipCornerLeft'] = {'local_rot': [0.0, 0.0, 0.0], 'coef': 1.0 }
-        self.joints['mFaceLipCornerRight'] = {'local_rot': [0.0, 0.0, 0.0], 'coef': -1.0 }
+        self.joints['mFaceLipCornerLeft'] = {'rotation': [0.0, 0.0, 0.0], 'coef': 1.0 }
+        self.joints['mFaceLipCornerRight'] = {'rotation': [0.0, 0.0, 0.0], 'coef': -1.0 }
         self.amplitude = math.pi / 8.0
 
     def setIntensity(self, intensity):
@@ -90,12 +90,12 @@ class Smile:
             s = math.sin(angle/2.0)
             c = math.cos(angle/2.0)
             q = glm.quat(c, s * SMILE_AXIS)
-            value['local_rot'] = puppetry.packedQuaternion(q)
+            value['rotation'] = puppetry.packedQuaternion(q)
 
     def getData(self):
         data = {}
         for key, value in self.joints.items():
-            data[key] = {'local_rot': value['local_rot']}
+            data[key] = {'rotation': value['rotation']}
         return data
 
 
@@ -146,7 +146,7 @@ def computeData(time_step):
         pitch = (jaw_amplitude * abs(ps)) * abs(rotator.sin())
         roll = 0.0
         data = {
-            'mFaceJaw':{'local_rot': puppetry.packedQuaternionFromEulerAngles(yaw, pitch, roll)}
+            'mFaceJaw':{'rotation': puppetry.packedQuaternionFromEulerAngles(yaw, pitch, roll)}
         }
     else:
         # smile
