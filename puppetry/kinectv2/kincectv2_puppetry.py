@@ -24,9 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
 $/LicenseInfo$
-"""
 
-'''
+
 This script uses the LEAP framework for sending messages to the viewer.
 Tell the viewer to launch it with the Advanced / Puppetry / Open Leap module command
 The viewer will start this script in a side process and will
@@ -54,29 +53,23 @@ string into the script's stdin:
 Also, for more readable text with newlines between messages
 uncomment the print("") line in the main loop below.
 
-'''
+"""
 
-import copy
 import ctypes
 from enum import IntEnum
-import eventlet
-import glm
 import math
-import numpy as np
-import quaternion
-import os
-from pykinect2 import PyKinectV2
-from pykinect2.PyKinectV2 import *
-from pykinect2 import PyKinectRuntime
-import pygame
-import sys
-import _thread as thread
 import time
 
-import puppetry
-from pygame_button import PYGButtonManager, PYGButton, PYGLogger
+import eventlet
+import glm
+from pykinect2 import PyKinectV2, PyKinectRuntime
+import pygame
 
-PYGLogger = puppetry.log
+import puppetry
+from pygame_button import PYGButtonManager, button_logger
+
+# Route button logging into the SL viewer
+button_logger.set_logger(puppetry.log)
 
 # To Do
 # --------------------------------------------------
@@ -196,24 +189,16 @@ PYKINECT_2_NAME = [
     'ThumbRight',    # 24
 ]
 
-# Application buttons
-button_manager = None
-
 # Main object for the application class
-kinect_capture_app = None    #
+#kinect_capture_app = None    #
 
 # PyKinectV2.JointType_Count = 25
 
 
 # -----------------------------------------------------------------------
 
-# Cruft from example - needed?
-
-# from avatar_skeleton.xml these are the "positions" of each joint in their parent-frame
-
-
 # Not used currently
-def getSLJointName(kinect_joint_index, side = 'right'):
+def get_SL_joint_name(kinect_joint_index, side = 'right'):
     """ Given kinect joint, get the corresponding SL joint """
     sl_joint_name = PYKINECT_2_SL_JOINTS[kinect_joint_index]  # test was joint_index
     if sl_joint_name == 'nobone':
@@ -236,7 +221,7 @@ def clamp(num, min_value, max_value):
 # -----------------------------------------------------------------------
 # Main classes and code
 
-# color for drawing the skeleton:
+# colors for drawing the skeleton
 # also try "blue", "green", "orange", "purple", "yellow", "violet"
 SKELETON_COLOR = pygame.color.THECOLORS["violet"]
 HEAD_COLOR = pygame.color.THECOLORS["blue"]
@@ -251,7 +236,6 @@ BTN_Y = 36
 BTN_WIDTH = 240
 BTN_HEIGHT = 50
 
-
 TEXT_COLOR = pygame.color.THECOLORS["yellow"]
 TEXT_COLOR_BG = pygame.color.THECOLORS["black"]
 TEXT_FONT_SIZE = 28
@@ -263,7 +247,8 @@ TEXTBOX_W = 500
 
 X_DEBUG_TEXT="xxxxxxxxx"
 
-class MSG_LINE(IntEnum):
+class MsgLine(IntEnum):
+    """ Line numbers for the info display """
     TITLE = 0
     SHOULDER_L = 1
     SHOULDER_L_SL = 2
@@ -278,25 +263,25 @@ class MSG_LINE(IntEnum):
     NOISE = 11
     LINE_COUNT = 12
 
-KINECT_COLOR_WIDTH = 1920
-KINECT_COLOR_HEIGHT = 1080
+kinect_color_width = 1920
+kinect_color_height = 1080
 
 # --------------------------------------------------
 
-class KinectJointInfo(object):
+class KinectJointInfo():
     """ Simple container for Kinect joint info """
     def __init__(self, index):
         """ Empty constructor """
         self.index = index
-        self.updateJoint(PyKinectV2.TrackingState_NotTracked, math.inf, math.inf)
+        self.update_joint(PyKinectV2.TrackingState_NotTracked, math.inf, math.inf)
 
-    def updateJoint(self, state, x, y):
+    def update_joint(self, state, x, y):
         """ figure out if we have valid data for this point """
         if math.isfinite(x) and math.isfinite(y) and state != PyKinectV2.TrackingState_NotTracked:
-            self.valid = True       # Accept TrackingState_Inferred and TrackingState_Tracked if they have data
+            self.valid = True       # Valid if TrackingState_Inferred or TrackingState_Tracked and has data
             self.x = float(x)
             self.y = float(y)
-            self.y_flip = abs(KINECT_COLOR_HEIGHT - self.y)       # pre-calculate flipped Y so 0,0 is lower left
+            self.y_flip = abs(kinect_color_height - self.y)       # pre-calculate flipped Y so 0,0 is lower left
         else:
             self.valid = False
             self.x = None
@@ -304,33 +289,40 @@ class KinectJointInfo(object):
             self.y_flip = None
 
     def __str__(self):
-        return '<KinectJointInfo x %r, y %r, y_flip %r, valid %r>' % (self.x, self.y, self.y_flip, self.valid)
+        """ for debugging """
+        return f'<KinectJointInfo x {self.x}, y {self.y}, y_flip {self.y_flip}, valid {self.valid}>'
 
     def __repr__(self):
+        """ just use string """
         return self.__str__()
 
 # --------------------------------------------------
 
 # Button click callback functions
-def toggle_setting(name):
+def toggle_setting_cb(name):
     """ Button clicked to turn camera on and off """
-    puppetry.log("Toggle %r button clicked" % name)
+    puppetry.log(f'Toggle {name} button clicked')
     if kinect_capture_app is not None:
-        kinect_capture_app.toggle_setting(name)
+        kinect_capture_app.toggle_setting_cb(name)
 
 # --------------------------------------------------
 
 
-class SLPuppetRuntime(object):
+class SLPuppetRuntime():
+    """ Main plugin class
+        To do - refactor into display and capture classes
+    """
     def __init__(self):
+
+        global kinect_color_width, kinect_color_height
         pygame.init()
 
         # Used to manage how fast the screen updates
         self._clock = pygame.time.Clock()
 
         # Set the width and height of the screen [width, height]
-        self._infoObject = pygame.display.Info()
-        self._screen = pygame.display.set_mode((self._infoObject.current_w >> 1, self._infoObject.current_h >> 1),
+        info_object = pygame.display.Info()
+        self._screen = pygame.display.set_mode((info_object.current_w >> 1, info_object.current_h >> 1),
                                                pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE, 32)
         self._mouse_scale_x = 0.5
         self._mouse_scale_y = 0.5
@@ -353,9 +345,9 @@ class SLPuppetRuntime(object):
         #self._kinect = PyKinectRuntime.PyKinectRuntime(PyKinectV2.FrameSourceTypes_Infrared | PyKinectV2.FrameSourceTypes_Body)
 
         # back buffer surface for getting Kinect color frames, 32bit color, width and height equal to the Kinect color frame size
-        KINECT_COLOR_WIDTH = self._kinect.color_frame_desc.Width
-        KINECT_COLOR_HEIGHT = self._kinect.color_frame_desc.Height
-        self._frame_surface = pygame.Surface((KINECT_COLOR_WIDTH, KINECT_COLOR_HEIGHT), 0, 32)
+        kinect_color_width = self._kinect.color_frame_desc.Width
+        kinect_color_height = self._kinect.color_frame_desc.Height
+        self._frame_surface = pygame.Surface((kinect_color_width, kinect_color_height), 0, 32)
         self._button_manager = PYGButtonManager(self._frame_surface)
 
         self._bodies = None          # skeleton data
@@ -366,25 +358,32 @@ class SLPuppetRuntime(object):
             self._joints.append(KinectJointInfo(i))
             self._last_joints.append(KinectJointInfo(i))
 
-        self._debug_lines = [X_DEBUG_TEXT for i in range(MSG_LINE.LINE_COUNT)]   # text status display in plug-in window
+        self._debug_lines = [X_DEBUG_TEXT for i in range(MsgLine.LINE_COUNT)]   # text status display in plug-in window
         self._noisy_data = 0
 
         self._last_ticks = pygame.time.get_ticks()
 
-        self._button_manager.createButton('camera', 'Camera',
-                    BTN_X, BTN_Y,              BTN_WIDTH, BTN_HEIGHT, toggle_setting)
-        self._button_manager.createButton('debug', 'Info',
-                    BTN_X, BTN_Y + BTN_HEIGHT, BTN_WIDTH, BTN_HEIGHT, toggle_setting)
+        # Make the buttons
+        new_info = {'name' : 'camera', 'label' : 'Camera',
+            'center_x' : BTN_X, 'center_y' : BTN_Y,
+            'width' : BTN_WIDTH, 'height' : BTN_HEIGHT }
+        self._button_manager.create_button(new_info, toggle_setting_cb)
+
+        new_info['name'] = 'debug'      # other values don't change
+        new_info['label'] = 'Info'
+        new_info['center_y'] =  BTN_Y + BTN_HEIGHT
+        self._button_manager.create_button(new_info, toggle_setting_cb)
+
 
     # --------------------------------------------------
-    def toggle_setting(self, name):
+    def toggle_setting_cb(self, name):
         """ Button click callback: turn it on or off """
         if name == 'camera':
             self._camera_display = not self._camera_display
         elif name == 'debug':
             self._debug_display = not self._debug_display
         else:
-            puppetry.log("*** Unexpected toggle_setting callback %r" % name)
+            puppetry.log(f'*** Unexpected toggle_setting_cb callback {name}')
 
     # --------------------------------------------------
     def draw_body_bone(self, color, start_joint_index, end_joint_index):
@@ -393,7 +392,7 @@ class SLPuppetRuntime(object):
         end_joint = self._joints[end_joint_index]
 
         if start_joint is None or end_joint is None:
-            puppetry.log("None joints start %r end %r" % (start_joint is None, end_joint is None))
+            puppetry.log(f'Have None joints: start {start_joint} end {end_joint}')
 
         # One of the joints is not valid - don't draw
         if start_joint.valid is False or end_joint.valid is False:
@@ -411,13 +410,13 @@ class SLPuppetRuntime(object):
             # Simple noise detection, looking for data jumps.  Need to
             # integrate this with dropping noisy sample in Puppetry, and
             # more investigation if data smoothing would help
-            NOISE_LIMIT = 100
+            noise_limit = 100
             last_joint = self._last_joints[start_joint_index]
             if last_joint is not None and last_joint.valid and \
-                (abs(last_joint.x - start_x) > NOISE_LIMIT or \
-                 abs(last_joint.y - start_y) > NOISE_LIMIT):
+                (abs(last_joint.x - start_x) > noise_limit or \
+                 abs(last_joint.y - start_y) > noise_limit):
                 self._noisy_data = self._noisy_data + 1   # count dropped data
-                self._debug_lines[MSG_LINE.NOISE] = "Noise %r" % self._noisy_data
+                self._debug_lines[MsgLine.NOISE] = f'Noise {self._noisy_data}'
                 #return
 
             # Save last position for this joint
@@ -426,8 +425,7 @@ class SLPuppetRuntime(object):
             pygame.draw.line(self._frame_surface, color, (start_x, start_y), (end_x, end_y), BONE_DRAW_WIDTH)
             pygame.draw.circle(self._frame_surface, color, (start_x, start_y), BONE_JOINT_DIAMETER)
         except Exception as ex: # need to catch here due to possible invalid positions (with inf)
-            puppetry.log("Drawing exception %r: %r and %r" % (ex, start_joint, end_joint))
-            pass
+            puppetry.log(f'Drawing exception {ex}: {start_joint} and {end_joint}')
 
 
     # --------------------------------------------------
@@ -506,6 +504,7 @@ class SLPuppetRuntime(object):
 
     # --------------------------------------------------
     def draw_color_frame(self, frame, target_surface):
+        """ Grab and draw the camera image """
         target_surface.lock()
         address = self._kinect.surface_as_array(target_surface.get_buffer())
         ctypes.memmove(address, frame.ctypes.data, frame.size)
@@ -519,24 +518,23 @@ class SLPuppetRuntime(object):
         line_offset = TEXTBOX_Y + (TEXT_LINE_SPACE * line_num)    # extra +1 for label space
         indent = TEXTBOX_X + indent
         text = self._font.render(info_msg, True, TEXT_COLOR, TEXT_COLOR_BG)
-        textRect = text.get_rect()    # create a rectangular object for the text surface object
-        textRect.topleft = (indent, line_offset)  # set the center of the rectangular object.
-        self._frame_surface.blit(text, textRect)
+        text_rect = text.get_rect()    # create a rectangular object for the text surface object
+        text_rect.topleft = (indent, line_offset)  # set the center of the rectangular object.
+        self._frame_surface.blit(text, text_rect)
 
 
     # --------------------------------------------------
     def draw_debug_text(self):
         """ show some diagnostic info """
         if self._debug_display:
-            line_num = 0
-            indent = 0
             erase_rect = pygame.Rect(TEXTBOX_X, TEXTBOX_Y - 10, TEXTBOX_W,
                 20 + (TEXT_LINE_SPACE * (1 + len(self._debug_lines))))
             pygame.draw.rect(self._frame_surface, TEXT_COLOR_BG, erase_rect)
 
             # Title line
             ticks =  pygame.time.get_ticks()
-            self.draw_text_line("Puppetry - %4.0f ms frame" % (ticks - self._last_ticks), TEXTBOX_INDENT, MSG_LINE.TITLE)
+            duration = (ticks - self._last_ticks)
+            self.draw_text_line(f'Puppetry - {duration:4.0f} ms frame', TEXTBOX_INDENT, MsgLine.TITLE)
             self._last_ticks = ticks
 
             for index, cur_line in enumerate(self._debug_lines):
@@ -545,34 +543,34 @@ class SLPuppetRuntime(object):
 
 
     # --------------------------------------------------
-    def getSafeJoint(self, joint_index, line_num):
+    def get_safe_joint(self, joint_index, line_num):
         """ Extract and check data, return x and y (Y up) """
         cur_joint = self._joints[joint_index]
         if cur_joint is None or not cur_joint.valid:
             #puppetry.log("Missing joint data for pivot index %r" % pivot)
-            self._debug_lines[line_num] = "No joint data %s" % PYKINECT_2_NAME[joint_index]
+            self._debug_lines[line_num] = f'No joint data {PYKINECT_2_NAME[joint_index]}'
             return None, None
 
         return cur_joint.x, cur_joint.y_flip      # Y points up
 
 
     # --------------------------------------------------
-    def findKinectJointAngle(self, root, pivot, far_end, line_num):
+    def find_kinect_joint_angle(self, root, pivot, far_end, line_num):
         """ Figure out angle between root, joint and far end points
             e.g.  an elbow pivot angle with shoulder and wrist position
             Currently using flattened 2d math to get 1 angle
         """
         angle = None
 
-        root_x, root_y = self.getSafeJoint(root, line_num)
+        root_x, root_y = self.get_safe_joint(root, line_num)
         if root_x is None:
             return None
 
-        pivot_x, pivot_y = self.getSafeJoint(pivot, line_num)
+        pivot_x, pivot_y = self.get_safe_joint(pivot, line_num)
         if pivot_x is None:
             return None
 
-        far_end_x, far_end_y = self.getSafeJoint(far_end, line_num)
+        far_end_x, far_end_y = self.get_safe_joint(far_end, line_num)
         if far_end_x is None:
             return None
 
@@ -600,21 +598,20 @@ class SLPuppetRuntime(object):
             slangle = slangle * -1.0
 
         if math.isfinite(slangle):
-            self._debug_lines[line_num] = "%s angle %3.3f" % (PYKINECT_2_NAME[pivot], slangle)
+            self._debug_lines[line_num] = f'{PYKINECT_2_NAME[pivot]} angle {slangle:3.3f}'
         else:
             slangle = None
             root_joint = self._joints[root]
             pivot_joint = self._joints[pivot]
             far_end_joint = self._joints[far_end]
-            self._debug_lines[line_num] = "%s angle NaN" % PYKINECT_2_NAME[pivot]
-            puppetry.log("Unexpected NaN angle found for %r : %r %r %r" %
-                (PYKINECT_2_NAME[pivot], root_joint, pivot_joint, far_end_joint))
+            self._debug_lines[line_num] = f'{PYKINECT_2_NAME[pivot]} angle NaN'
+            puppetry.log(f'Unexpected NaN angle found for {PYKINECT_2_NAME[pivot]} : {root_joint} {pivot_joint} {far_end_joint}')
 
         return slangle
 
 
     # --------------------------------------------------
-    def extractJoints(self, body):
+    def extract_joints(self, body):
         """ Extract joint data that we care about.  Things just seem to work
             better doing this - pull the data at one point and process it """
 
@@ -631,16 +628,15 @@ class SLPuppetRuntime(object):
         for joint_index in range(PyKinectV2.JointType_Count):
             cur_kjoint = kjoints[joint_index]
             cur_color_point = color_points[joint_index]
-            self._joints[joint_index].updateJoint(cur_kjoint.TrackingState,
+            self._joints[joint_index].update_joint(cur_kjoint.TrackingState,
                                        cur_color_point.x,
                                        cur_color_point.y)
             if do_logging:
-                log_msg = "joint %r : %r" % (PYKINECT_2_NAME[joint_index], self._joints[joint_index])
-                puppetry.log(log_msg)
+                puppetry.log(f'joint {PYKINECT_2_NAME[joint_index]} : {self._joints[joint_index]}')
 
 
     # --------------------------------------------------
-    def calcLimbData2DLeft(self):
+    def calc_lib_data_2d_left(self):
         """ Create data for a joint sequence along a limb """
         # Look for tracked bones, and gather data.  Use simple 2d projection,
         #  assuming human is facing the Kinect camera
@@ -652,33 +648,33 @@ class SLPuppetRuntime(object):
         limb_data['mElbowLeft'] = {'r': [0.0, 0.0, 0.0]}
         limb_data['mWristLeft'] = {'r': [0.0, MPIO4, 0.0]}   # palm to camera
 
-        slangle = self.findKinectJointAngle(PyKinectV2.JointType_SpineShoulder,
+        slangle = self.find_kinect_joint_angle(PyKinectV2.JointType_SpineShoulder,
                                             PyKinectV2.JointType_ShoulderLeft,
-                                            PyKinectV2.JointType_ElbowLeft, MSG_LINE.SHOULDER_L)
+                                            PyKinectV2.JointType_ElbowLeft, MsgLine.SHOULDER_L)
         if slangle is not None:     # set left shoulder rotation
             slangle = 0.5 * slangle                 # why does this make things right?
             slangle = clamp(slangle, MPIO3, PIO3)
             limb_data['mShoulderLeft'] = {'r' : [slangle, 0.0, 0.0]}
-            self._debug_lines[MSG_LINE.SHOULDER_L_SL] = "mShoulderLeft  %1.2f" % slangle
+            self._debug_lines[MsgLine.SHOULDER_L_SL] = f'mShoulderLeft  {slangle:1.2f}'
         else:
-            self._debug_lines[MSG_LINE.SHOULDER_L_SL] = "No mShoulderLeft"
+            self._debug_lines[MsgLine.SHOULDER_L_SL] = "No mShoulderLeft"
 
-        slangle = self.findKinectJointAngle(PyKinectV2.JointType_ShoulderLeft,
+        slangle = self.find_kinect_joint_angle(PyKinectV2.JointType_ShoulderLeft,
                                             PyKinectV2.JointType_ElbowLeft,
-                                            PyKinectV2.JointType_WristLeft, MSG_LINE.ELBOW_L)
+                                            PyKinectV2.JointType_WristLeft, MsgLine.ELBOW_L)
         if slangle is not None:   # set left elbow rotation
             slangle = 0.5 * slangle                 # why does this make things right?
             slangle = clamp(slangle, MPIO3, PIO3)
             limb_data['mElbowLeft'] = {'r' : [slangle, 0.0, 0.0]}
-            self._debug_lines[MSG_LINE.ELBOW_L_SL] = "mElbowLeft  %1.2f" % (limb_data['mElbowLeft']['r'][0])
+            self._debug_lines[MsgLine.ELBOW_L_SL] = f'mElbowLeft  {slangle:1.2f}'
         else:
-            self._debug_lines[MSG_LINE.ELBOW_L_SL] = "No mElbowLeft"
+            self._debug_lines[MsgLine.ELBOW_L_SL] = "No mElbowLeft"
 
         #puppetry.log("left data %r" % (limb_data))
         return limb_data
 
     # --------------------------------------------------
-    def calcLimbData2DRight(self):
+    def calc_lib_data_2d_right(self):
         """ Create data for a joint sequence along a limb """
         # Look for tracked bones, and gather data.  Use simple 2d projection,
         #  assuing human is facing the Kinect camera
@@ -691,34 +687,34 @@ class SLPuppetRuntime(object):
         limb_data['mWristRight'] = {'r': [0.0, MPIO4, 0.0]}    # palm to camera
 
         # Get shoulder kinect angle
-        slangle = self.findKinectJointAngle(PyKinectV2.JointType_SpineShoulder,
+        slangle = self.find_kinect_joint_angle(PyKinectV2.JointType_SpineShoulder,
                                             PyKinectV2.JointType_ShoulderRight,
-                                            PyKinectV2.JointType_ElbowRight, MSG_LINE.SHOULDER_R)
+                                            PyKinectV2.JointType_ElbowRight, MsgLine.SHOULDER_R)
         if slangle is not None:   # set right shoulder rotation
             slangle = 0.5 * slangle                 # why does this make things right?
             slangle = clamp(slangle, MPIO3, PIO3)
             limb_data['mShoulderRight'] = {'r' : [slangle, 0.0, 0.0]}
-            self._debug_lines[MSG_LINE.SHOULDER_R_SL] = "mShoulderRight %1.2f" % limb_data['mShoulderRight']['r'][0]
+            self._debug_lines[MsgLine.SHOULDER_R_SL] = f'mShoulderRight {slangle:1.2f}'
         else:
-            self._debug_lines[MSG_LINE.SHOULDER_R_SL] = "No mShoulderRight"
+            self._debug_lines[MsgLine.SHOULDER_R_SL] = "No mShoulderRight"
 
         # Get elbow kinect angle
-        slangle = self.findKinectJointAngle(PyKinectV2.JointType_ShoulderRight,
+        slangle = self.find_kinect_joint_angle(PyKinectV2.JointType_ShoulderRight,
                                             PyKinectV2.JointType_ElbowRight,
-                                            PyKinectV2.JointType_WristRight, MSG_LINE.ELBOW_R)
+                                            PyKinectV2.JointType_WristRight, MsgLine.ELBOW_R)
         if slangle is not None:   # set right elbow rotation
             slangle = 0.5 * slangle                 # why does this make things right?
             slangle = clamp(slangle, MPIO3, 0.0)
             limb_data['mElbowRight'] = {'r' : [slangle, 0.0, 0.0]}
-            self._debug_lines[MSG_LINE.ELBOW_R_SL] = "mElbowRight %1.2f" % (limb_data['mElbowRight']['r'][0])
+            self._debug_lines[MsgLine.ELBOW_R_SL] = f'mElbowRight {slangle:1.2f}'
         else:
-            self._debug_lines[MSG_LINE.ELBOW_R_SL] = "No mElbowRight"
+            self._debug_lines[MsgLine.ELBOW_R_SL] = "No mElbowRight"
 
         #puppetry.log("limb_data %r" % (limb_data))
         return limb_data
 
     # --------------------------------------------------
-    def calcLimbData2DCenter(self):
+    def calc_lib_data_2d_center(self):
         """ Create data for a joint sequence along a limb """
         # Look for tracked bones, and gather data.  Use simple 2d projection,
         #  assuing human is facing the Kinect camera
@@ -728,30 +724,30 @@ class SLPuppetRuntime(object):
         limb_data['mNeck'] = {'r': [0.0, 0.0, 0.0]}
         limb_data['mHead'] = {'r': [0.0, 0.0, 0.0]}
 
-        slangle = self.findKinectJointAngle(PyKinectV2.JointType_SpineShoulder,
+        slangle = self.find_kinect_joint_angle(PyKinectV2.JointType_SpineShoulder,
                                            PyKinectV2.JointType_Neck,
-                                           PyKinectV2.JointType_Head, MSG_LINE.NECK)
+                                           PyKinectV2.JointType_Head, MsgLine.NECK)
 
         if slangle is not None:   # add "rotation"
             slangle = clamp(slangle, -0.2, 0.2)
             limb_data['mNeck'] = {'r' : [slangle, 0.0, 0.0]}
-            self._debug_lines[MSG_LINE.NECK_SL] = "mNeck  %1.2f" % (limb_data['mNeck']['r'][0])
+            self._debug_lines[MsgLine.NECK_SL] = f'mNeck  {slangle:1.2f}'
         else:
-            self._debug_lines[MSG_LINE.NECK_SL] = "No mNeck"
+            self._debug_lines[MsgLine.NECK_SL] = "No mNeck"
 
         #puppetry.log("limb_data %r" % (limb_data))
         return limb_data
 
 
     # --------------------------------------------------
-    def computePuppetryData(self):
+    def compute_puppetry_data(self):
         """ Make SL puppetry data """
         puppet_data = {}
-        sub_data = self.calcLimbData2DRight()
+        sub_data = self.calc_lib_data_2d_right()
         puppet_data.update(sub_data)
-        sub_data = self.calcLimbData2DLeft()
+        sub_data = self.calc_lib_data_2d_left()
         puppet_data.update(sub_data)
-        sub_data = self.calcLimbData2DCenter()
+        sub_data = self.calc_lib_data_2d_center()
         puppet_data.update(sub_data)
 
         #puppetry.log("Created %r" % puppet_data)
@@ -774,8 +770,8 @@ class SLPuppetRuntime(object):
                     new_size_x, new_size_y = event.dict['size']
                     self._screen = pygame.display.set_mode((new_size_x, new_size_y),
                                                pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE, 32)
-                    self._mouse_scale_x = new_size_x / KINECT_COLOR_WIDTH
-                    self._mouse_scale_y = new_size_y / KINECT_COLOR_WIDTH
+                    self._mouse_scale_x = new_size_x / kinect_color_width
+                    self._mouse_scale_y = new_size_y / kinect_color_height
 
             # Getting frames and drawing
             # Woohoo! We've got a color frame! Let's fill out back buffer surface with frame's data
@@ -797,7 +793,7 @@ class SLPuppetRuntime(object):
                     if not body.is_tracked:
                         continue
 
-                    self.extractJoints(body)
+                    self.extract_joints(body)
 
                     self.draw_body()
                     body_index = i
@@ -808,7 +804,7 @@ class SLPuppetRuntime(object):
                 now = time.monotonic()
                 if body_index >= 0 and now > update_time:
                     update_time = now + UPDATE_PERIOD
-                    data = self.computePuppetryData()
+                    data = self.compute_puppetry_data()
                     if data:
                         puppetry.sendSet({"j":data})  # "joint_state"
                         #puppetry.log("sent %r" % data)
@@ -848,10 +844,10 @@ class SLPuppetRuntime(object):
 
 
 # -----------------------------------------------------------------------
+kinect_capture_app = SLPuppetRuntime()
+
 def kinect_puppetry():
     """ Main module run in eventlet """
-    global kinect_capture_app
-    kinect_capture_app = SLPuppetRuntime()
     kinect_capture_app.run()
 
 
@@ -867,7 +863,7 @@ puppetry.start()
 spinner = eventlet.spawn(kinect_puppetry)
 
 while puppetry.isRunning():
-    eventlet.sleep(0.2)
+    eventlet.sleep(0.1)
 
 # cleanup
 spinner.wait()
