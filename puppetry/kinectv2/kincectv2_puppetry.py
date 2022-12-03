@@ -794,7 +794,7 @@ class SLPuppetRuntime():
             mouse_pos[1] = mouse_pos[1] / self._mouse_scale_y
 
             # Do the buttons
-            self._button_manager.idle(mouse_pos)
+            self._button_manager.step_frame(mouse_pos)
 
             # Debug text drawing
             self.draw_debug_text()

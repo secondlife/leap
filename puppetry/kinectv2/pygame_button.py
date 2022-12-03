@@ -118,41 +118,41 @@ class PYGButtonManager():
         self._buttons = {}
 
     def create_button(self, new_info, click_callback = None):
-        """ Create a new button"""
+        """ Create a new button """
 
         name = new_info['name']
-        if name not in self._buttons:
-            button_info = {'name' : name,
-                        'text_size' : BTN_TEXT_SIZE,
-                        'text_color' : BTN_TEXT_COLOR,
-                        'button_color' : BTN_COLOR,
-                        'hover_color' : BTN_HOVER_COLOR}
+        if name in self._buttons:   # replace any already with the same name
+            self.delete_button(name)
 
-            if 'text_size' in new_info:
-                button_info['text_size'] = new_info['text_size']
-            if 'text_color' in new_info:
-                button_info['text_color'] = new_info['text_color']
-            if 'button_color' in new_info:
-                button_info['button_color'] = new_info['button_color']
-            if 'hover_color' in new_info:
-                button_info['hover_color'] = new_info['hover_color']
+        button_info = {'name' : name,
+                    'text_size' : BTN_TEXT_SIZE,
+                    'text_color' : BTN_TEXT_COLOR,
+                    'button_color' : BTN_COLOR,
+                    'hover_color' : BTN_HOVER_COLOR}
 
-            button_info['label'] = new_info['label']
-            button_info['center_x'] = new_info['center_x']
-            button_info['center_y'] = new_info['center_y']
-            button_info['width'] = new_info['width']
-            button_info['height'] = new_info['height']
+        if 'text_size' in new_info:
+            button_info['text_size'] = new_info['text_size']
+        if 'text_color' in new_info:
+            button_info['text_color'] = new_info['text_color']
+        if 'button_color' in new_info:
+            button_info['button_color'] = new_info['button_color']
+        if 'hover_color' in new_info:
+            button_info['hover_color'] = new_info['hover_color']
 
-            self._buttons[name] = PYGButton(button_info, click_callback)
-        else:
-            raise Exception(f"Can't create same button {name} twice")
+        button_info['label'] = new_info['label']
+        button_info['center_x'] = new_info['center_x']
+        button_info['center_y'] = new_info['center_y']
+        button_info['width'] = new_info['width']
+        button_info['height'] = new_info['height']
+
+        self._buttons[name] = PYGButton(button_info, click_callback)
 
     def delete_button(self, name):
         """ Remove a button """
         if name in self._buttons:
             del self._buttons[name]
 
-    def idle(self, mouse_pos):
+    def step_frame(self, mouse_pos):
         """ Called once per frame to handle events and draw.
             Mouse postions are scaled to the full image (not screen) size """
         mouse_down = pygame.mouse.get_pressed()[LEFT_CLICK]
