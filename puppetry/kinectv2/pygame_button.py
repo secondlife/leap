@@ -26,7 +26,7 @@ class PYGLogger():
 
     def set_logger(self, logger_func):
         """ Set alternative function """
-        self._logger_func = default_logger
+        self._logger_func = logger_func
 
     def msg(self, log_msg):
         """ Route the message to log function """
@@ -45,8 +45,10 @@ class PYGButton():
 
         self._width = button_info['width']
         self._height = button_info['height']
-        self._left = button_info['center_x'] - (self._width // 2)
-        self._top = button_info['center_y'] - (self._height // 2)
+        self._center_x = button_info['center_x']
+        self._center_y = button_info['center_y']
+        self._left = self._center_x - (self._width // 2)
+        self._top = self._center_y - (self._height // 2)
         self._right = self._left + self._width
         self._bottom = self._top + self._height
         self._color = button_info['button_color']
@@ -57,26 +59,43 @@ class PYGButton():
         self._text_color = button_info['text_color']
         self._click_callback = click_callback
         self._mouse_down = False
+        self._checked = False
 
         self._font = pygame.font.Font("freesansbold.ttf", button_info['text_size'])
 
         font_size = self._font.size(self._label)
-        self._text_x = (button_info['center_x'] - (font_size[0] // 1.5))
         self._text_y = (button_info['center_y'] - (font_size[1] // 2))
+        self.set_checked(False)   # will set _text_x
         button_logger.msg(f'Created button {self._name}')
 
+    def get_display_label(self):
+        """ Get the label to display """
+        if self._checked:
+            return f'* {self._label} *'
+        return f'{self._label}'
+
+    def set_checked(self, checked):
+        """ check nor not """
+        self._checked = checked
+        button_logger.msg(f'button {self._name} checked is {self._checked}')
+
+        display_label = self.get_display_label()
+        font_size = self._font.size(display_label)
+        self._text_x = (self._center_x - (font_size[0] // 1.5))
+        button_logger.msg(f'button {self._name} checked is {self._checked}'
+                          f' font_size {font_size} for text {display_label}')
 
     def draw_normal(self, surface):
         """ Draw normal frame, color and text for button """
         pygame.draw.rect(surface, self._color, (self._left, self._top, self._width, self._height))
-        rendered_text = self._font.render(F"{self._label}",True, self._text_color)
+        rendered_text = self._font.render(self.get_display_label(),True, self._text_color)
         surface.blit(rendered_text, [self._text_x, self._text_y])
 
 
     def draw_hover(self, surface, mouse_down):
         """ Draw hover frame, color and text for button  TO DO - use mouse_down, add _text_hover_color ?"""
         pygame.draw.rect(surface, self._hover_color, (self._left, self._top, self._width, self._height))
-        rendered_text = self._font.render(F"{self._label}",True, self._text_color)
+        rendered_text = self._font.render(self.get_display_label(),True, self._text_color)
         shift = 4 if mouse_down else 0
         surface.blit(rendered_text, [self._text_x + shift, self._text_y + shift])
 
@@ -151,6 +170,14 @@ class PYGButtonManager():
         """ Remove a button """
         if name in self._buttons:
             del self._buttons[name]
+
+    def check_button(self, name, checked):
+        """ Set / clear checkmark flag """
+        #button_logger.msg(f'check_button called for {name} : {checked}')
+        if name in self._buttons:
+            self._buttons[name].set_checked(checked)
+        else:
+            button_logger.msg(f'check_button cant find {name} checked value is {checked}')
 
     def step_frame(self, mouse_pos):
         """ Called once per frame to handle events and draw.

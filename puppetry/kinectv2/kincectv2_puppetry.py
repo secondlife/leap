@@ -221,7 +221,7 @@ TEXT_FONT_SIZE = 28
 TEXT_LINE_SPACE = TEXT_FONT_SIZE + 2
 TEXTBOX_INDENT = 10
 TEXTBOX_X = 10
-TEXTBOX_Y = 142
+TEXTBOX_Y = 192
 TEXTBOX_W = 500
 
 X_DEBUG_TEXT="xxxxxxxxx"
@@ -244,6 +244,17 @@ class MsgLine(IntEnum):
 
 kinect_color_width = 1920
 kinect_color_height = 1080
+
+MIRROR_BONES = {
+    'mCollarRight' : 'mCollarLeft',
+    'mShoulderRight' : 'mShoulderLeft',
+    'mElbowRight' : 'mElbowLeft',
+    'mWristRight' : 'mWristLeft',
+    'mCollarLeft' : 'mCollarRight',
+    'mShoulderLeft' : 'mShoulderRight',
+    'mElbowLeft' : 'mElbowRight',
+    'mWristLeft' : 'mWristRight',
+}
 
 # --------------------------------------------------
 
@@ -316,6 +327,8 @@ class SLPuppetRuntime():
         # Loop until the user clicks the close button.
         self._done = False
 
+        self._mirror = False    # swap left / right for mirror effect in SL
+
         # Kinect runtime object, we want only color and body frames
         self._kinect = PyKinectRuntime.PyKinectRuntime(PyKinectV2.FrameSourceTypes_Color |
                                                         PyKinectV2.FrameSourceTypes_Depth |
@@ -347,22 +360,39 @@ class SLPuppetRuntime():
             'center_x' : BTN_X, 'center_y' : BTN_Y,
             'width' : BTN_WIDTH, 'height' : BTN_HEIGHT }
         self._button_manager.create_button(new_info, toggle_setting_cb)
+        self._button_manager.check_button('camera', self._camera_display)
+
+        new_info['name'] = 'mirror'      # other values don't change
+        new_info['label'] = 'Mirror'
+        new_info['center_y'] =  BTN_Y + BTN_HEIGHT
+        self._button_manager.create_button(new_info, toggle_setting_cb)
+        self._button_manager.check_button('mirror', self._mirror)
 
         new_info['name'] = 'debug'      # other values don't change
         new_info['label'] = 'Info'
-        new_info['center_y'] =  BTN_Y + BTN_HEIGHT
+        new_info['center_y'] =  BTN_Y + (2 * BTN_HEIGHT)
         self._button_manager.create_button(new_info, toggle_setting_cb)
+        self._button_manager.check_button('debug', self._debug_display)
 
 
     # --------------------------------------------------
     def toggle_setting_cb(self, name):
         """ Button click callback: turn it on or off """
+        checked = False
         if name == 'camera':
             self._camera_display = not self._camera_display
+            checked = self._camera_display
         elif name == 'debug':
             self._debug_display = not self._debug_display
+            checked = self._debug_display
+        elif name == 'mirror':
+            self._mirror = not self._mirror
+            checked = self._mirror
         else:
             puppetry.log(f'*** Unexpected toggle_setting_cb callback {name}')
+
+        puppetry.log(f'calling manager.check_button {name} : {checked}')
+        self._button_manager.check_button(name, checked)
 
     # --------------------------------------------------
     def draw_body_bone(self, color, start_joint_index, end_joint_index):
@@ -615,6 +645,20 @@ class SLPuppetRuntime():
 
 
     # --------------------------------------------------
+    def get_mirror_bone(self, bone_name):
+        """ Returns the bone to use to swap sides for mirrors """
+        if self._mirror:
+            try:
+                return MIRROR_BONES[bone_name]
+            except KeyError as errkey:
+                puppetry.log(f'get_mirror_bone failed for {bone_name}')
+        return bone_name
+
+
+    # --------------------------------------------------
+    # The left / right split could probably be totally eliminated by
+    # parameterized side switches, but in the end it might be unreadable.
+    # In any case, better calculations with full geometry is more important
     def calc_lib_data_2d_left(self):
         """ Create data for a joint sequence along a limb """
         # Look for tracked bones, and gather data.  Use simple 2d projection,
@@ -622,32 +666,43 @@ class SLPuppetRuntime():
         limb_data = {}
 
         # Force T pose, then try to manipulate the elbow
-        limb_data['mCollarLeft'] = {'r': [0.0, 0.0, 0.0]}
-        limb_data['mShoulderLeft'] = {'r': [0.0, 0.0, 0.0]}
-        limb_data['mElbowLeft'] = {'r': [0.0, 0.0, 0.0]}
-        limb_data['mWristLeft'] = {'r': [0.0, MPIO4, 0.0]}   # palm to camera
+        collar = self.get_mirror_bone('mCollarLeft')
+        shoulder = self.get_mirror_bone('mShoulderLeft')
+        elbow = self.get_mirror_bone('mElbowLeft')
+        wrist = self.get_mirror_bone('mWristLeft')
 
+        limb_data[collar] = {'r': [0.0, 0.0, 0.0]}
+        limb_data[shoulder] = {'r': [0.0, 0.0, 0.0]}
+        limb_data[elbow] = {'r': [0.0, 0.0, 0.0]}
+        limb_data[wrist] = {'r': [0.0, MPIO4, 0.0]}   # palm to camera
+
+        # Get elbow kinect angle
         slangle = self.find_kinect_joint_angle(PyKinectV2.JointType_SpineShoulder,
                                             PyKinectV2.JointType_ShoulderLeft,
                                             PyKinectV2.JointType_ElbowLeft, MsgLine.SHOULDER_L)
         if slangle is not None:     # set left shoulder rotation
             slangle = 0.5 * slangle                 # why does this make things right?
             slangle = clamp(slangle, MPIO3, PIO3)
-            limb_data['mShoulderLeft'] = {'r' : [slangle, 0.0, 0.0]}
-            self._debug_lines[MsgLine.SHOULDER_L_SL] = f'mShoulderLeft  {slangle:1.2f}'
+            if self._mirror:
+                slangle = slangle * -1.0
+            limb_data[shoulder] = {'r' : [slangle, 0.0, 0.0]}
+            self._debug_lines[MsgLine.SHOULDER_L_SL] = f'{shoulder}  {slangle:1.2f}'
         else:
-            self._debug_lines[MsgLine.SHOULDER_L_SL] = "No mShoulderLeft"
+            self._debug_lines[MsgLine.SHOULDER_L_SL] = "No left {shoulder}"
 
+        # Get shoulder kinect angle
         slangle = self.find_kinect_joint_angle(PyKinectV2.JointType_ShoulderLeft,
                                             PyKinectV2.JointType_ElbowLeft,
                                             PyKinectV2.JointType_WristLeft, MsgLine.ELBOW_L)
         if slangle is not None:   # set left elbow rotation
             slangle = 0.5 * slangle                 # why does this make things right?
             slangle = clamp(slangle, MPIO3, PIO3)
-            limb_data['mElbowLeft'] = {'r' : [slangle, 0.0, 0.0]}
-            self._debug_lines[MsgLine.ELBOW_L_SL] = f'mElbowLeft  {slangle:1.2f}'
+            if self._mirror:
+                slangle = slangle * -1.0
+            limb_data[elbow] = {'r' : [slangle, 0.0, 0.0]}
+            self._debug_lines[MsgLine.ELBOW_L_SL] = f'{elbow}  {slangle:1.2f}'
         else:
-            self._debug_lines[MsgLine.ELBOW_L_SL] = "No mElbowLeft"
+            self._debug_lines[MsgLine.ELBOW_L_SL] = "No left {elbow}"
 
         #puppetry.log("left data %r" % (limb_data))
         return limb_data
@@ -656,14 +711,19 @@ class SLPuppetRuntime():
     def calc_lib_data_2d_right(self):
         """ Create data for a joint sequence along a limb """
         # Look for tracked bones, and gather data.  Use simple 2d projection,
-        #  assuing human is facing the Kinect camera
+        #  assuming human is facing the Kinect camera
         limb_data = {}
 
         # Force T pose, then try to manipulate the elbow
-        limb_data['mCollarRight'] = {'r': [0.0, 0.0, 0.0]}      # T pose
-        limb_data['mShoulderRight'] = {'r': [0.0, 0.0, 0.0]}
-        limb_data['mElbowRight'] = {'r': [0.0, 0.0, 0.0]}
-        limb_data['mWristRight'] = {'r': [0.0, MPIO4, 0.0]}    # palm to camera
+        collar = self.get_mirror_bone('mCollarRight')
+        shoulder = self.get_mirror_bone('mShoulderRight')
+        elbow = self.get_mirror_bone('mElbowRight')
+        wrist = self.get_mirror_bone('mWristRight')
+
+        limb_data[collar] = {'r': [0.0, 0.0, 0.0]}
+        limb_data[shoulder] = {'r': [0.0, 0.0, 0.0]}
+        limb_data[elbow] = {'r': [0.0, 0.0, 0.0]}
+        limb_data[wrist] = {'r': [0.0, MPIO4, 0.0]}   # palm to camera
 
         # Get shoulder kinect angle
         slangle = self.find_kinect_joint_angle(PyKinectV2.JointType_SpineShoulder,
@@ -672,10 +732,12 @@ class SLPuppetRuntime():
         if slangle is not None:   # set right shoulder rotation
             slangle = 0.5 * slangle                 # why does this make things right?
             slangle = clamp(slangle, MPIO3, PIO3)
-            limb_data['mShoulderRight'] = {'r' : [slangle, 0.0, 0.0]}
-            self._debug_lines[MsgLine.SHOULDER_R_SL] = f'mShoulderRight {slangle:1.2f}'
+            if self._mirror:
+                slangle = slangle * -1.0
+            limb_data[shoulder] = {'r' : [slangle, 0.0, 0.0]}
+            self._debug_lines[MsgLine.SHOULDER_R_SL] = f'{shoulder} {slangle:1.2f}'
         else:
-            self._debug_lines[MsgLine.SHOULDER_R_SL] = "No mShoulderRight"
+            self._debug_lines[MsgLine.SHOULDER_R_SL] = "No right {shoulder}"
 
         # Get elbow kinect angle
         slangle = self.find_kinect_joint_angle(PyKinectV2.JointType_ShoulderRight,
@@ -683,11 +745,13 @@ class SLPuppetRuntime():
                                             PyKinectV2.JointType_WristRight, MsgLine.ELBOW_R)
         if slangle is not None:   # set right elbow rotation
             slangle = 0.5 * slangle                 # why does this make things right?
-            slangle = clamp(slangle, MPIO3, 0.0)
-            limb_data['mElbowRight'] = {'r' : [slangle, 0.0, 0.0]}
-            self._debug_lines[MsgLine.ELBOW_R_SL] = f'mElbowRight {slangle:1.2f}'
+            slangle = clamp(slangle, MPIO3, PIO3)
+            if self._mirror:
+                slangle = slangle * -1.0
+            limb_data[elbow] = {'r' : [slangle, 0.0, 0.0]}
+            self._debug_lines[MsgLine.ELBOW_R_SL] = f'{elbow} {slangle:1.2f}'
         else:
-            self._debug_lines[MsgLine.ELBOW_R_SL] = "No mElbowRight"
+            self._debug_lines[MsgLine.ELBOW_R_SL] = "No right {elbow}"
 
         #puppetry.log("limb_data %r" % (limb_data))
         return limb_data
@@ -709,6 +773,8 @@ class SLPuppetRuntime():
 
         if slangle is not None:   # add "rotation"
             slangle = clamp(slangle, -0.2, 0.2)
+            if self._mirror:
+                slangle = slangle * -1.0
             limb_data['mNeck'] = {'r' : [slangle, 0.0, 0.0]}
             self._debug_lines[MsgLine.NECK_SL] = f'mNeck  {slangle:1.2f}'
         else:
