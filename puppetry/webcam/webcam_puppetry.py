@@ -272,7 +272,7 @@ class Expression:
                     radians(deg_rot[0]), radians(deg_rot[1]), radians(deg_rot[2]) )
 
         if puppetry.part_active('head'):                        #Add head rotation data to the output stream
-            add_state("mHead","rot", packed_quaternion, output)
+            add_state("mHead","rotation", packed_quaternion, output)
 
         return self.head_rot_ea
 
