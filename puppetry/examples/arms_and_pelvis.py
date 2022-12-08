@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """\
 @file arms_and_pelvis.py
-@brief simple LEAP script to animate the head and arms
+@brief simple LEAP script to demonstraint movable pelvis
 
 $LicenseInfo:firstyear=2022&license=viewerlgpl$
 Second Life Viewer Source Code
