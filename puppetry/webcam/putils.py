@@ -8,6 +8,7 @@ import cv2
 import glm
 import numpy as np
 
+
 def add_to_data(kind, name, field, value, data):
     '''Adds the named values to the correct part of the data struct for its kind'''
 
