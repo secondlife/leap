@@ -62,7 +62,7 @@ def make_zxy_effector( name, point, output ):
                           frame
     '''
     pos = [ float( -point[2] ), float( point[0] ), float( -point[1] )  ]
-    add_ik(name,"pos", pos, output) 
+    add_ik(name,"position", pos, output) 
 
     return
 
