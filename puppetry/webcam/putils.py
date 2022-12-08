@@ -9,6 +9,31 @@ import glm
 import numpy as np
 
 
+def add_to_data(kind, name, field, value, data):
+    '''Adds the named values to the correct part of the data struct for its kind'''
+
+    if kind not in data:
+        data[kind] = {}
+
+    if name not in data[kind]:
+        data[kind][name]={}
+
+    data[kind][name][field]=value
+
+    return
+
+def add_ik(name, field, value, data):
+    '''Adds the named values to the IK part of the data structure.'''
+
+    add_to_data("inverse_kinematics", name, field, value, data)
+    return
+
+def add_state(name, field, value, data):
+    '''Adds the named values to the joint_state part of the data structure.'''
+
+    add_to_data("joint_state", name, field, value, data)
+    return
+
 def print_float_vectors(vec):
     '''debug function to print floating point vectors'''
     outstr = '('
@@ -38,10 +63,7 @@ def make_zxy_effector( name, point, output ):
                           frame
     '''
     pos = [ float( -point[2] ), float( point[0] ), float( -point[1] )  ]
-    if name in output:
-        output[name]['pos'] = pos
-    else:
-        output[name] = { 'pos' : pos }
+    add_ik(name,"position", pos, output)
 
     return
 
