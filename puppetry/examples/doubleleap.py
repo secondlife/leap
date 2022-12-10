@@ -12,24 +12,10 @@ import sys
 import time
 import traceback
 import eventlet
+import puppetry
+import agentio
 
 from math import sin, cos, pi, sqrt, degrees, radians
-
-try:
-    import puppetry
-except ImportError as err:
-    # modify sys.path so we can find puppetry module in parent directory
-    currentdir = os.path.dirname(os.path.realpath(__file__))
-    parentdir = os.path.dirname(currentdir)
-    sys.path.append(parentdir)
-    parentdir = os.path.dirname(parentdir)
-    sys.path.append(parentdir)
-
-# now we can really import puppetry
-try:
-    import puppetry
-except ImportError as err:
-    sys.exit("Can't find puppetry module")
 
 # set up a logger sending to stderr, which gets routed to viewer logs
 LOGGER_FORMAT = "%(filename)s:%(lineno)s %(funcName)s: %(message)s"
@@ -92,25 +78,44 @@ class Expression:
         frame_start_time=None       #Time for start of frame.
         data={}                     #Data structure to be output to LEAP
         counter=0
+        direction=1
+
+        agentio.init( puppetry )    #Start second leap module for agentio data
+        eventlet.sleep(UPDATE_PERIOD)
 
         while puppetry.isRunning():
-            success = True
-
             frame_start_time = time.time()
 
-            if success:
-                #Send the puppetry info to viewer first.
-                puppetry.sendSet(data)
+            #Build some crude animation to see we're doing stuff.
+            delta = (counter % 10)
+            if not direction:
+                delta = 10 - delta
+            
+            z = 0.1  + ( delta * 0.05 )
 
-                counter += 1
-                if (counter % 10) == 0:
-                    sendAgentIOGet('look_at')
+            ik = { "mElbowRight": { "position": [ 0.3, -0.2, z ] } }
+            data = {'inverse_kinematics':ik}
 
-                cur_time = time.time()
-                frame_compute_time = cur_time - frame_start_time
-                nap_duration = max(0.0, UPDATE_PERIOD - frame_compute_time)
-                eventlet.sleep(nap_duration)
+            #TODO try sending puppetry and agentio requests in the same frame.
 
+            #Every 10th frame ask for a look_at target
+            if (counter % 10) == 0:
+                look_at = agentio.getLookAt()
+                if look_at is None:
+                    puppetry.log("Not lookin at anything.")
+                else:
+                    puppetry.log(f"Last received look_at was: {look_at}")
+
+                agentio.sendGet('look_at')
+                direction = direction * -1
+
+            puppetry.sendSet(data)
+            counter += 1
+
+            cur_time = time.time()
+            frame_compute_time = cur_time - frame_start_time
+            nap_duration = max(0.0, UPDATE_PERIOD - frame_compute_time)
+            eventlet.sleep(nap_duration)
 
             # Window has been closed or hit 'q' to quit
             try:
@@ -130,47 +135,11 @@ class Expression:
         except Exception as ex:
             pass
 
-def inbound_handler(message):
-    '''This routine handles non-puppetry leap messages received
-        by the module'''
-    #handled = False
-    handled = True
-    try:
-        command_name = message['data']['command']
-        command_args = message['data'].get("args", {})
-        puppetry.log("CMD: %s; ARGS: %s" % (command_name,str(command_args)))
-    except Exception as e:
-        puppetry.log(f"failed command='{command_name}' err='{e}'")
-    return handled
-
-
-def sendAgentIOGet(data):
-    """ Send a get request to the viewer for an agentIO message.
-          data can be a single string, or a list/tuple of strings
-    """
-    data_out = []
-    if isinstance(data, str):
-        data_out = [data]
-    elif isinstance(data, list):
-        data_out = data
-    elif isinstance(data, tuple):
-        for item in data:
-            if isinstance(item, str):
-                data_out.append(item)
-    else:
-        puppetry.log(f"malformed 'get' data={data}")
-        return
-    if data_out:
-        msg = { 'command':'get', 'get':data_out}
-        msg.setdefault('reqid', puppetry.get_next_request_id())
-        puppetry.sendLeapRequest('agentio',msg)
-
 def main(camera_num = 0):
     '''pylint wants to docstring for the main function'''
     # _logger.setLevel(logging.DEBUG)
 
     puppetry.start()                                    #Initiate puppetry communication
-    puppetry.setInboundDataHandler(inbound_handler)
     try:
         face = Expression(camera_num = camera_num)      #Init the expression plug-in
     except Exception as exerr:

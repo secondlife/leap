@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """\
 @file puppetry.py
 @brief simple framework for sending puppetry data to SL viewer
@@ -359,14 +360,11 @@ def _handleCommand(message):
                 except Exception as e:
                     _logger.info(f"failed command='{command_name}' err='{e}'")
         except:
-            _logger.info(f"unknown command='{command_name}'")
+            _logger.debug(f"unknown command='{command_name}'")
             known_commands = _commandRegistry.keys()
-            _logger.info(f"known command are {known_commands}")
+            _logger.debug(f"known command are {known_commands}")
     except:
         _logger.info(f"failed command message='{message}'")
-    return handled
-
-    _logger.debug(f"message='{message}' handled={handled}")
     return handled
 
 def _spin():
