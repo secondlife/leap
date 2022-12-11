@@ -35,10 +35,12 @@ _commandRegistry = {}       #List of callbacks for handling messages.
 _controller = None          #The class handling leapIO (EX puppetry)
 
 _look_at=None
+_camera=None
+_agent_orientation=None
 
-# decorator usage: @registerCommand('command')
-#                  def do_command(...):  ...
 def registerCommand(command, func=None):
+    """ decorator usage: @registerCommand('command')
+                  def do_command(...):  ..."""
     def _register(fn):
         global _commandRegistry
         _commandRegistry[command] = fn
@@ -55,7 +57,6 @@ def deregisterCommand(command):
         del _commandRegistry[command]
     except:
         _controller.log(f"failed deregister command='{command}'")
-        pass
 
 def __init__():
     pass
@@ -77,19 +78,23 @@ def _handleCommand(message):
                     operator(command_args)
                     handled = True
                 except Exception as e:
-                    _logger.info(f"failed command='{command_name}' err='{e}'")
+                    _controller.log(f"failed command='{command_name}' err='{e}'")
         except:
-            _logger.info(f"unknown command='{command_name}'")
+            _controller.log(f"unknown command='{command_name}'")
             known_commands = _commandRegistry.keys()
-            _logger.info(f"known command are {known_commands}")
+            _controller.log(f"known command are {known_commands}")
     except:
-        _logger.info(f"failed command message='{message}'")
+        _controller.log(f"failed command message='{message}'")
     return handled
 
 #Registry of verbs.
 @registerCommand("look_at")
 def look_at(args):
-    """handle look_at data"""
+    """Handles receipt of look_at data from viewer.
+        Look at contains a vector relative the head position
+        which provides the direction to the look at target.
+        The distance from the agent to the target is specified in
+        world space (meters)"""
 
     global _look_at
 
@@ -98,7 +103,31 @@ def look_at(args):
                      "distance" :args["distance"] }
     else:
         _look_at = None
-        
+
+@registerCommand("viewer_camera")
+def viewer_camera(args):
+    """Receives the camera position and target position in world units (meters)
+       relative to the avatar's position and orientation."""
+    global _camera
+
+    if "camera" in args and "target" in args:
+        _camera = { "camera":args["camera"], \
+                    "target":args["target"] }
+    else:
+        _camera = None
+
+@registerCommand("agent_orientation")
+def agent_orientation(args):
+    """Receives the agent's absolute position and rotation
+       within the region."""
+    global _agent_orientation
+
+    if "position" in args and "rotation" in args:
+        _agent_orientation = { "position":args["position"], \
+                               "rotation":args["rotation"] }
+    else:
+        _agent_orientation = None
+
 #Public functions
 def init( controller ):
     """Send a message to the server to activate the lazy leap loader for agentIO"""
@@ -116,6 +145,17 @@ def init( controller ):
         listener=_controller.leap.replypump())
     pump=_controller.leap.cmdpump() # targets the viewer's LLLeapListener
     _controller.leap.request(pump=pump, data=request)
+
+def sendSet(data):
+    """ Send a set request to the viewer
+            data must be a dict
+    """
+    if isinstance(data, dict):
+        msg = { 'command':'set', 'data':data }
+        msg.setdefault('reqid', get_next_request_id())
+        _controller.sendLeapRequest(msg)
+    else:
+        _controller.log(f"malformed 'set' data={data}")
 
 def sendGet(data):
     """ Send a get request to the viewer for an agentIO message.
@@ -141,8 +181,17 @@ def sendGet(data):
         _controller.sendLeapRequest('agentio',msg)
 
 def getLookAt():
-    """_look_at will contain either None or the direction and distance to the look_at target"""
+    """Returns look_at data if the viewer has sent it or None"""
     return _look_at
+
+def getCamera():
+    """Returns camera data if the viewer has sent it or None"""
+    return _camera
+
+def getAgentOrientation():
+    """Returns agent orientation data if the viewer has sent it or None"""
+    return _agent_orientation
+
 
 if __name__ == '__main__':
     # run for 10 seconds then stop
