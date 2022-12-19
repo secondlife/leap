@@ -67,15 +67,6 @@ class Expression:
                     puppetry.sendGet('skeleton')    #Re-request skeleton data.
         return False
 
-    def set_camera(self, camera, target, target_id = None):
-        '''Makes a request to the viewer to set the camera's position and target position 
-           In absolute region space.  Unit size is 1 meter. Distance from agent may be 
-           clamped per normal camera rules.   target_id is an optional parameter 
-           for the UUID to lock the camera target to.'''
-
-        data = { 'camera':camera, 'target':target, 'target_id':target_id }
-        agentio.sendSet('camera')
-
     def main_loop(self):
         '''The main loop of expression processing'''
 
@@ -115,7 +106,7 @@ class Expression:
                 else:
                     puppetry.log(f"Last received look_at was: {look_at}")
 
-                agentio.sendGet('look_at')
+                agentio.request_lookat()
                 direction = direction * -1
 
             puppetry.sendSet(data)

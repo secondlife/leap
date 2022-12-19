@@ -146,50 +146,54 @@ def init( controller ):
     pump=_controller.leap.cmdpump() # targets the viewer's LLLeapListener
     _controller.leap.request(pump=pump, data=request)
 
-def sendSet(data):
-    """ Send a set request to the viewer
-            data must be a dict
-    """
-    if isinstance(data, dict):
-        msg = { 'command':'set', 'data':data }
-        msg.setdefault('reqid', get_next_request_id())
-        _controller.sendLeapRequest(msg)
-    else:
-        _controller.log(f"malformed 'set' data={data}")
-
-def sendGet(data):
-    """ Send a get request to the viewer for an agentIO message.
-          data can be a single string, or a list/tuple of strings
+def set_camera(params):
+    """Send a request to set the agent's in-world camera position.
+       Expects a data structure containing world-space XYZ 
+       coordinates for the camera's position and the camera's 
+       focal target. target_id may optionally be set to focus the 
+       camera on the object identified by the UUID if it is 
+       present.  Camera and target positions may be clamped to
+       some range relative to the agent's position in world.
+       Example message:  { 'camera':(x,y,z), 'target':(x,y,z), 'target_id':<UUID> }
     """
 
-    data_out = []
-    if isinstance(data, str):
-        data_out = [data]
-    elif isinstance(data, list):
-        data_out = data
-    elif isinstance(data, tuple):
-        for item in data:
-            if isinstance(item, str):
-                data_out.append(item)
-    else:
-        _controller.log(f"malformed 'get' data={data}")
-        return
-    if data_out:
-        reqID = _controller.get_next_request_id()
-        msg = { 'command':'get', 'data':data_out}
-        msg.setdefault('reqid', reqID)
-        _controller.sendLeapRequest('agentio',msg)
+    msg = { 'command':'set_camera', 'data':params }
+    _controller.sendLeapRequest(msg)
+
+def request_camera():
+    """Send get_camera request to agentio module.  Viewer responds with viewer_camera"""
+    msg = { 'command':'get_camera', 'data':{} }
+    _controller.sendLeapRequest(msg)
+
+
+def request_lookat():
+    """Send get_lookat request to agentio module. Viewer responds with look_at"""
+    msg = { 'command':'get_lookat', 'data':{} }
+    _controller.sendLeapRequest(msg)
+
+
+def request_agent_orientation():
+    """Send get_agent_orientation request to agentio module.  Viewer responds with agent_orientation"""
+    msg = { 'command':'get_agent_orientation', 'data':{} }
+    _controller.sendLeapRequest(msg)
+
 
 def getLookAt():
-    """Returns look_at data if the viewer has sent it or None"""
+    """Returns look_at data if the viewer has sent it or None
+        data contains a direction relative the agent's head orientation and a distance.
+        EX: {'direction': (x,y,z), 'distance':d}"""
     return _look_at
 
 def getCamera():
-    """Returns camera data if the viewer has sent it or None"""
+    """Returns camera data if the viewer has sent it or None.
+        data contains the world space position of the camera and the focal target of the camera.
+        EX: {'camera':(x,y,z), 'target':(x,y,z)}"""
     return _camera
 
 def getAgentOrientation():
-    """Returns agent orientation data if the viewer has sent it or None"""
+    """Returns agent orientation data if the viewer has sent it or None
+        data structure is the agent's world-space position and world-frame rotation.
+        EX: {'position':(x,y,z), 'rotation':(q,x,y,z)}"""
     return _agent_orientation
 
 
