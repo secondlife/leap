@@ -39,30 +39,35 @@ The viewer will start the script in a side process and will send messages
 to the process's stdin while receiving messages the script writes to its stdout.
 
 The messages have the form:
-num_bytes:{pump="puppetry",data='{"joint_name":{"param_name":[r1.23,r4.56,r7.89]}, ...}"'}
+num_bytes:{'pump':'puppetry',
+           'data':{'command':'set',
+                   'data':{'inverse_kinematics':{'mWristLeft':{'p':[r0.3,r0.5,r0.623],'r':[r0.5,r-0.5,r-0.5]},
+                                                 'mWristRight':{'p':[r0.3,r-0.5,r0.63],'r':[r-0.5,r-0.5,r0.5]}},
+                   'joint_state':{'mPelvis':{'p':[r0.0,r0.0171,r0.07]}}},
+           'reqid':i1,
+           'reply':!}}
 
 Where:
-
     num_byes = number of characters following the first colon.
 
+    pump = 'puppetry'
+
+    data = {'command': 'set'|'get', 'data': {}}
+
+    set data = {'inverse_kinematics':{'joint_name':{'position':[x,y,z], 'rotation':[qx,qy,qz], 'scale':[x,y,z]}},
+                'joint_state':{'joint_name':{'position':[x,y,z], 'rotation':[qx,qy,qz], 'scale':[x,y,z]}}}
+
+        alternatively can use terse format: 'i' instead of 'inverse_kinematics' and 'j' instead of 'joint_state'
+
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
-        e.g. something like: "mWristLeft"
+        e.g. something like: 'mWristLeft'
 
-    param_name = "local_rot" | "rot" | "pos" | "scale"
+    joint parameter name = 'position', 'rotation', or 'scale'
+        alternatively can use terse format: 'p', 'r', or 's'
 
-    param_name's value = LLSD array of three floats (e.g. [x,y,z])
+    joint parameter value = array of three floats [x, y, z]
 
-Multiple joints can be combined into the same LLSD formatted string.
-
-When you test a LEAP script at the command line it will block because the
-leap.py module is waiting for the initial message from the viewer.  To unblock
-the system paste the following string into the script's stdin:
-
-119:{'data':{'command':'18ce5015-b651-1d2e-2470-0de841fd3635','features':{}},'pump':'54481a53-c41f-4fc2-606e-516daed03636'}
-
-$LicenseInfo:firstyear=2022&license=viewerlgpl$
-Copyright (c) 2022, Linden Research, Inc.
-$/LicenseInfo$
+    The 'reqid' and 'reply' fields are added automatically by the LEAP module.
 '''
 
 import datetime

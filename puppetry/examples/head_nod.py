@@ -6,25 +6,27 @@ head_nod.py -- use Puppetry to update head's local orientation
 
 Run this script via viewer menu...
     Advanced --> Puppetry --> Launch LEAP plug-in...
+
 This script uses the LEAP framework for sending messages to the viewer.
-The joint data is a dictionary with the following format:
-    data={"joint_name":{"type":[1.23,4.56,7.89]}, ...}
+
+Typically you just want to send a "set" command:
+    puppetry.sendSet(data)
+
+The 'set' data is a dictionary with the following format:
+    data={"inverse_kinematics":{"joint_name":{"type":[1.23,4.56,7.89] ,...} ,...},
+          "joint_state":{"joint_name":{"type":[1.23,4.56,7.89] ,...} ,...}}
 Where:
-    joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
+    'inverse_kinematics' for specifying avatar-frame target transforms
+    'joint_state' for specifying parent-frame joint transforms
+        alternatively can use terse format: 'i' instead of 'inverse_kinematics' and 'j' instead of 'joint_state'
+
+    'joint_name' = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "rot" | "pos" | "scale"
+
+    'type' = "rotation" | "position" | "scale"
+        alternatively can use terse format: 'r', 'p', and 's'
+
     type's value = array of three floats (e.g. [x,y,z])
-Multiple joints can be combined into the same dictionary.
-
-Note: When you test this script at the command line it will block
-because the leap.py framework is waiting for the initial message
-from the viewer.  To unblock the system paste the following
-string into the script's stdin:
-
-119:{'data':{'command':'18ce5015-b651-1d2e-2470-0de841fd3635','features':{}},'pump':'54481a53-c41f-4fc2-606e-516daed03636'}
-
-Also, for more readable text with newlines between messages
-uncomment the print("") line in the main loop below.
 """
 
 import math
@@ -106,7 +108,7 @@ def computeData(time_step):
     # assemble the message
     packed_rot = puppetry.packedQuaternionFromEulerAngles(tilt, nod, turn)
     data = {
-        'mHead':{'local_rot': packed_rot}
+        'mHead':{'rotation': packed_rot}
     }
     return data
 

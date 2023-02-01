@@ -11,7 +11,7 @@ The joint data is a dictionary with the following format:
 Where:
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "rot" | "pos" | "scale"
+    type = "rotation" | "position" | "scale"
     type's value = array of three floats (e.g. [x,y,z])
 Multiple joints can be combined into the same dictionary.
 
@@ -272,7 +272,7 @@ class Expression:
                     radians(deg_rot[0]), radians(deg_rot[1]), radians(deg_rot[2]) )
 
         if puppetry.part_active('head'):                        #Add head rotation data to the output stream
-            output["mHead"] =  {"rot": packed_quaternion}
+            add_state("mHead","rotation", packed_quaternion, output)
 
         return self.head_rot_ea
 
@@ -479,7 +479,7 @@ class Expression:
         return  #Forced finger disable
 
         if puppetry.part_active('fingers'):
-            debug_wrist_v = output['mElbow'+label]['pos']
+            debug_wrist_v = output['mElbow'+label]['position']
 
             hand_wrist_v =  self.avg_hand_pts[label][0]     #Position from hand
 
@@ -510,7 +510,7 @@ class Expression:
                 joint_name = "mHand" + key + "3" + label
                 self.create_relative_effector(joint_name, pose_wrist_v, tip_d, output)
 
-                dist = magnitude ( distance_3d(debug_wrist_v, output[joint_name]['pos'] ) )
+                dist = magnitude ( distance_3d(debug_wrist_v, output[joint_name]['position'] ) )
 
     def get_initial_skeleton(self):
         '''On startup, mediapipe blocks heavily, temporarily disrupting leap communication
