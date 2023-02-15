@@ -579,13 +579,13 @@ class Expression:
                 #Holistic performs detection of meshes for the body pose and key points in
                 #the hands and face
                 self.detected = self.holistic.process(self.camera.rgb_image)    #Detect forms
+                self.display.prep_output(self.camera.bgr_image) #Add face data to output display
             else:
                 success = False
 
             #If there is face data, use it to orient and position the head.
             if success and self.detected.face_landmarks is not None:
                 data={} #At this point we know we have data so flush any subframe data.
-                self.display.prep_output(self.camera.bgr_image) #Add face data to output display
                 success = self.handle_head(self.detected.face_landmarks, data)  #Rotate/position head
             else:
                 success = False

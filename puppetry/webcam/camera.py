@@ -57,5 +57,6 @@ class Camera:
 
         self.size[1], self.size[0], _ = self.bgr_image.shape
         self.rgb_image = cv2.cvtColor(self.bgr_image, cv2.COLOR_BGR2RGB)
+
         return True
 
