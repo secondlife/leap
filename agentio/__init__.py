@@ -1,32 +1,7 @@
-#!/usr/bin/env python3
-"""\
+'''\
 @file agentio.py
 @brief simple framework for handling agentio messages received by puppetry
-
-$LicenseInfo:firstyear=2022&license=viewerlgpl$
-Second Life Viewer Source Code
-Copyright (C) 2022, Linden Research, Inc.
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation;
-version 2.1 of the License only.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
-
-$LicenseInfo:firstyear=2022&license=viewerlgpl$
-Copyright (c) 2022, Linden Research, Inc.
-$/LicenseInfo$
-"""
+'''
 
 CONTROLLER_PUMP = 'agentio.controller'
 
@@ -39,8 +14,8 @@ _camera=None
 _agent_orientation=None
 
 def registerCommand(command, func=None):
-    """ decorator usage: @registerCommand('command')
-                  def do_command(...):  ..."""
+    ''' decorator usage: @registerCommand('command')
+                  def do_command(...):  ...'''
     def _register(fn):
         global _commandRegistry
         _commandRegistry[command] = fn
@@ -51,20 +26,20 @@ def registerCommand(command, func=None):
     return _register
 
 def deregisterCommand(command):
-    """ not really used, but here for completeness.  Removes a command from handled data """
+    ''' not really used, but here for completeness.  Removes a command from handled data '''
     global _commandRegistry
     try:
         del _commandRegistry[command]
-    except:
+    except KeyError:
         _controller.log(f"failed deregister command='{command}'")
 
 def __init__():
     pass
 
 def _handleCommand(message):
-    """  Process message as a dict from the viewer
+    '''  Process message as a dict from the viewer
     message = { data: { command: 'foo', args: { ... } }, pump: ... }
-    """
+    '''
 
     _controller._logger.debug(f"leap has command '{message}'")
     handled = False
@@ -79,22 +54,22 @@ def _handleCommand(message):
                     handled = True
                 except Exception as e:
                     _controller.log(f"failed command='{command_name}' err='{e}'")
-        except:
+        except KeyError:
             _controller.log(f"unknown command='{command_name}'")
             known_commands = _commandRegistry.keys()
             _controller.log(f"known command are {known_commands}")
-    except:
+    except KeyError:
         _controller.log(f"failed command message='{message}'")
     return handled
 
 #Registry of verbs.
 @registerCommand("look_at")
 def look_at(args):
-    """Handles receipt of look_at data from viewer.
+    '''Handles receipt of look_at data from viewer.
         Look at contains a vector relative the head position
         which provides the direction to the look at target.
         The distance from the agent to the target is specified in
-        world space (meters)"""
+        world space (meters)'''
 
     global _look_at
 
@@ -106,8 +81,8 @@ def look_at(args):
 
 @registerCommand("viewer_camera")
 def viewer_camera(args):
-    """Receives the camera position and target position in world units (meters)
-       relative to the avatar's position and orientation."""
+    '''Receives the camera position and target position in world units (meters)
+       relative to the avatar's position and orientation.'''
     global _camera
 
     if "camera" in args and "target" in args:
@@ -118,8 +93,8 @@ def viewer_camera(args):
 
 @registerCommand("agent_orientation")
 def agent_orientation(args):
-    """Receives the agent's absolute position and rotation
-       within the region."""
+    '''Receives the agent's absolute position and rotation
+       within the region.'''
     global _agent_orientation
 
     if "position" in args and "rotation" in args:
@@ -130,7 +105,7 @@ def agent_orientation(args):
 
 #Public functions
 def init( controller ):
-    """Send a message to the server to activate the lazy leap loader for agentIO"""
+    '''Send a message to the server to activate the lazy leap loader for agentIO'''
 
     global _controller
 
@@ -147,56 +122,53 @@ def init( controller ):
     _controller.leap.request(pump=pump, data=request)
 
 def set_camera(params):
-    """Send a request to set the agent's in-world camera position.
-       Expects a data structure containing world-space XYZ 
-       coordinates for the camera's position and the camera's 
-       focal target. target_id may optionally be set to focus the 
-       camera on the object identified by the UUID if it is 
+    '''Send a request to set the agent's in-world camera position.
+       Expects a data structure containing world-space XYZ
+       coordinates for the camera's position and the camera's
+       focal target. target_id may optionally be set to focus the
+       camera on the object identified by the UUID if it is
        present.  Camera and target positions may be clamped to
        some range relative to the agent's position in world.
        Example message:  { 'camera':(x,y,z), 'target':(x,y,z), 'target_id':<UUID> }
-    """
+    '''
 
     msg = { 'command':'set_camera', 'data':params }
     _controller.sendLeapRequest(msg)
 
 def request_camera():
-    """Send get_camera request to agentio module.  Viewer responds with viewer_camera"""
+    '''Send get_camera request to agentio module.  Viewer responds with viewer_camera'''
     msg = { 'command':'get_camera', 'data':{} }
     _controller.sendLeapRequest(msg)
 
 
 def request_lookat():
-    """Send get_lookat request to agentio module. Viewer responds with look_at"""
+    '''Send get_lookat request to agentio module. Viewer responds with look_at'''
     msg = { 'command':'get_lookat', 'data':{} }
     _controller.sendLeapRequest(msg)
 
 
 def request_agent_orientation():
-    """Send get_agent_orientation request to agentio module.  Viewer responds with agent_orientation"""
+    '''Send get_agent_orientation request to agentio module.
+       Viewer responds with agent_orientation'''
     msg = { 'command':'get_agent_orientation', 'data':{} }
     _controller.sendLeapRequest(msg)
 
 
 def getLookAt():
-    """Returns look_at data if the viewer has sent it or None
+    '''Returns look_at data if the viewer has sent it or None
         data contains a direction relative the agent's head orientation and a distance.
-        EX: {'direction': (x,y,z), 'distance':d}"""
+        EX: {'direction': (x,y,z), 'distance':d}'''
     return _look_at
 
 def getCamera():
-    """Returns camera data if the viewer has sent it or None.
+    '''Returns camera data if the viewer has sent it or None.
         data contains the world space position of the camera and the focal target of the camera.
-        EX: {'camera':(x,y,z), 'target':(x,y,z)}"""
+        EX: {'camera':(x,y,z), 'target':(x,y,z)}'''
     return _camera
 
 def getAgentOrientation():
-    """Returns agent orientation data if the viewer has sent it or None
+    '''Returns agent orientation data if the viewer has sent it or None
         data structure is the agent's world-space position and world-frame rotation.
-        EX: {'position':(x,y,z), 'rotation':(q,x,y,z)}"""
+        EX: {'position':(x,y,z), 'rotation':(q,x,y,z)}'''
     return _agent_orientation
 
-
-if __name__ == '__main__':
-    # run for 10 seconds then stop
-    raise Exception("Library cannot be run")

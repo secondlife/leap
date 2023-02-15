@@ -3,7 +3,6 @@
 import argparse
 import cv2
 import itertools
-import glm
 import logging
 import mediapipe as mp
 import numpy as np
@@ -18,7 +17,7 @@ import agentio
 from math import sin, cos, pi, sqrt, degrees, radians
 
 # set up a logger sending to stderr, which gets routed to viewer logs
-LOGGER_FORMAT = "%(filename)s:%(lineno)s %(funcName)s: %(message)s"
+LOGGER_FORMAT = '%(filename)s:%(lineno)s %(funcName)s: %(message)s'
 LOGGER_LEVEL = logging.INFO
 
 logging.basicConfig( format=LOGGER_FORMAT, handlers=[logging.StreamHandler(sys.stderr)], level=LOGGER_LEVEL)
@@ -26,7 +25,7 @@ _logger = logging.getLogger(__name__)
 
 UPDATE_PERIOD = 0.1     # time between puppetry updates
 
-WINDOW_NAME = "Image"
+WINDOW_NAME = 'Image'
 
 class Expression:
     '''The Expression class manages mapping input from
@@ -54,7 +53,7 @@ class Expression:
 
         while puppetry.isRunning() and retries > 0:
             if puppetry.get_skeleton_data('scale') is not None:
-                puppetry.log("Got skeleton woot!")
+                puppetry.log('Got skeleton woot!')
                 return True           #We've got some data, can continue.
 
             eventlet.sleep(0.1) #Sleep 1/10th of a second
@@ -73,7 +72,7 @@ class Expression:
         try:
             cv2.namedWindow(WINDOW_NAME)  # Create a window.   This is initially blank, but shows the user something is going on
         except cv2.error as excp:
-            puppetry.log("cv2 exception creating window: %s" % str(excp))
+            puppetry.log('cv2 exception creating window: %s' % str(excp))
 
         frame_start_time=None       #Time for start of frame.
         data={}                     #Data structure to be output to LEAP
@@ -93,7 +92,7 @@ class Expression:
             
             z = 0.1  + ( delta * 0.05 )
 
-            ik = { "mElbowRight": { "position": [ 0.3, -0.2, z ] } }
+            ik = { 'mElbowRight': { 'position': [ 0.3, -0.2, z ] } }
             data = {'inverse_kinematics':ik}
 
             #TODO try sending puppetry and agentio requests in the same frame.
@@ -102,9 +101,9 @@ class Expression:
             if (counter % 10) == 0:
                 look_at = agentio.getLookAt()
                 if look_at is None:
-                    puppetry.log("Not lookin at anything.")
+                    puppetry.log('Not lookin at anything.')
                 else:
-                    puppetry.log(f"Last received look_at was: {look_at}")
+                    puppetry.log(f'Last received look_at was: {look_at}')
 
                 agentio.request_lookat()
                 direction = direction * -1
@@ -126,7 +125,7 @@ class Expression:
                     puppetry.stop()   # will exit loop
             except cv2.error as excp:
                 # Will throw exceptions before we get a window set up
-                puppetry.log("quit check cv2 exception %s" % str(excp))
+                puppetry.log('quit check cv2 exception %s' % str(excp))
                 pass
 
         try:
@@ -144,20 +143,21 @@ def main(camera_num = 0):
         face = Expression(camera_num = camera_num)      #Init the expression plug-in
     except Exception as exerr:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        puppetry.log("stacktrace: %r" % traceback.format_tb(exc_traceback))
-        puppetry.log("Unable to create Expression for camera %r : %r" % (camera_num, str(exerr)))
+        puppetry.log('stacktrace: %r' % traceback.format_tb(exc_traceback))
+        puppetry.log('Unable to create Expression for camera %r : %r' % (camera_num, str(exerr)))
+        puppetry.stop()
         return
 
     face.get_initial_skeleton()     #Get skeleton data from viewer.
     face.main_loop()
     puppetry.stop()
 
-if __name__ == "__main__":
-    """ Deal with command line arguments """
+if __name__ == '__main__':
+    ''' Deal with command line arguments '''
 
     parser = argparse.ArgumentParser(description='Second Life face motion capture',
-        epilog="Pass in camera number to use")
-    parser.add_argument('-c', '--camera', dest='camera_number',
+        epilog='Pass in camera number to use')
+    parser.add_argument('-c', '--camera', dest='camera_number', type=int,
         default=0, help='Camera device number to use')
     args = parser.parse_args()
 

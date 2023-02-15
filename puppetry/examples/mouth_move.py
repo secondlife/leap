@@ -4,25 +4,27 @@ simple LEAP script to move the avatar's mouth
 
 Run this script via viewer menu...
     Advanced --> Puppetry --> Launch LEAP plug-in...
+
 This script uses the LEAP framework for sending messages to the viewer.
-The joint data is a dictionary with the following format:
-    data={"joint_name":{"type":[1.23,4.56,7.89]}, ...}
+
+Typically you just want to send a "set" command:
+    puppetry.sendSet(data)
+
+The 'set' data is a dictionary with the following format:
+    data={"inverse_kinematics":{"joint_name":{"type":[1.23,4.56,7.89] ,...} ,...},
+          "joint_state":{"joint_name":{"type":[1.23,4.56,7.89] ,...} ,...}}
 Where:
-    joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
+    'inverse_kinematics' for specifying avatar-frame target transforms
+    'joint_state' for specifying parent-frame joint transforms
+        alternatively can use terse format: 'i' instead of 'inverse_kinematics' and 'j' instead of 'joint_state'
+
+    'joint_name' = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "rot" | "pos" | "scale"
+
+    'type' = "rotation" | "position" | "scale"
+        alternatively can use terse format: 'r', 'p', and 's'
+
     type's value = array of three floats (e.g. [x,y,z])
-Multiple joints can be combined into the same dictionary.
-
-Note: When you test this script at the command line it will block
-because the leap.py framework is waiting for the initial message
-from the viewer.  To unblock the system paste the following
-string into the script's stdin:
-
-119:{'data':{'command':'18ce5015-b651-1d2e-2470-0de841fd3635','features':{}},'pump':'54481a53-c41f-4fc2-606e-516daed03636'}
-
-Also, for more readable text with newlines between messages
-uncomment the print("") line in the main loop below.
 """
 
 import math
@@ -79,8 +81,8 @@ SMILE_AXIS = glm.normalize(glm.vec3(0.5, 0.0, 1.0))
 class Smile:
     def __init__(self):
         self.joints = {}
-        self.joints['mFaceLipCornerLeft'] = {'local_rot': [0.0, 0.0, 0.0], 'coef': 1.0 }
-        self.joints['mFaceLipCornerRight'] = {'local_rot': [0.0, 0.0, 0.0], 'coef': -1.0 }
+        self.joints['mFaceLipCornerLeft'] = {'rotation': [0.0, 0.0, 0.0], 'coef': 1.0 }
+        self.joints['mFaceLipCornerRight'] = {'rotation': [0.0, 0.0, 0.0], 'coef': -1.0 }
         self.amplitude = math.pi / 8.0
 
     def setIntensity(self, intensity):
@@ -90,12 +92,12 @@ class Smile:
             s = math.sin(angle/2.0)
             c = math.cos(angle/2.0)
             q = glm.quat(c, s * SMILE_AXIS)
-            value['local_rot'] = puppetry.packedQuaternion(q)
+            value['rotation'] = puppetry.packedQuaternion(q)
 
     def getData(self):
         data = {}
         for key, value in self.joints.items():
-            data[key] = {'local_rot': value['local_rot']}
+            data[key] = {'rotation': value['rotation']}
         return data
 
 
@@ -146,7 +148,7 @@ def computeData(time_step):
         pitch = (jaw_amplitude * abs(ps)) * abs(rotator.sin())
         roll = 0.0
         data = {
-            'mFaceJaw':{'local_rot': puppetry.packedQuaternionFromEulerAngles(yaw, pitch, roll)}
+            'mFaceJaw':{'rotation': puppetry.packedQuaternionFromEulerAngles(yaw, pitch, roll)}
         }
     else:
         # smile
