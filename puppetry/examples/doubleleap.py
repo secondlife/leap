@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
-import cv2
-import itertools
 import logging
-import mediapipe as mp
-import numpy as np
-import os
 import sys
 import time
-import traceback
-import eventlet
-import puppetry
-import agentio
 
-from math import sin, cos, pi, sqrt, degrees, radians
+import cv2
+import eventlet
+
+import agentio
+import puppetry
 
 # set up a logger sending to stderr, which gets routed to viewer logs
 LOGGER_FORMAT = '%(filename)s:%(lineno)s %(funcName)s: %(message)s'
@@ -89,7 +84,7 @@ class Expression:
             delta = (counter % 10)
             if not direction:
                 delta = 10 - delta
-            
+
             z = 0.1  + ( delta * 0.05 )
 
             ik = { 'mElbowRight': { 'position': [ 0.3, -0.2, z ] } }

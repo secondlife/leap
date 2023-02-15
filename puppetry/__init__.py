@@ -42,9 +42,10 @@ import logging
 import math
 import sys
 
-import glm
-import leap
 import eventlet
+import glm
+
+import leap
 
 CONTROLLER_PUMP = 'puppetry.controller'
 
@@ -312,7 +313,7 @@ def unpackedQuaternion(xyz):
 def _handleCommand(message):
     '''  Process message as a dict from the viewer
     message = { data: { command: 'foo', args: { ... } }, pump: ... }
- 
+
     Default handled commands are:
         stop
         log
