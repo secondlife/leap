@@ -126,7 +126,6 @@ class Expression:
             except cv2.error as excp:
                 # Will throw exceptions before we get a window set up
                 puppetry.log('quit check cv2 exception %s' % str(excp))
-                pass
 
         try:
             # attempt to clean up
@@ -139,14 +138,7 @@ def main(camera_num = 0):
     # _logger.setLevel(logging.DEBUG)
 
     puppetry.start()                                    #Initiate puppetry communication
-    try:
-        face = Expression(camera_num = camera_num)      #Init the expression plug-in
-    except Exception as exerr:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        puppetry.log('stacktrace: %r' % traceback.format_tb(exc_traceback))
-        puppetry.log('Unable to create Expression for camera %r : %r' % (camera_num, str(exerr)))
-        puppetry.stop()
-        return
+    face = Expression(camera_num = camera_num)      #Init the expression plug-in
 
     face.get_initial_skeleton()     #Get skeleton data from viewer.
     face.main_loop()
