@@ -43,7 +43,7 @@ import platform
 import re
 import sys
 
-from llbase import llsd
+import llsd
 
 os.environ['EVENTLET_THREADPOOL_SIZE'] = '2'
 # On Mac with Python 3.9, we must use the poll hub rather than the
