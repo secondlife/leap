@@ -119,7 +119,7 @@ def get(f=None):
     # bytes, not chars, when that matters.
     data = _get(f or stdin_proxy)
     try:
-        return llsd.parse(data)
+        return llsd.parse_binary(data)
     except llsd.LLSDParseError as e:
         msg = 'Bad received packet (%r)' % e
         print('%s, %s bytes:' % (msg, len(data)), file=sys.stderr)
