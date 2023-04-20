@@ -10,7 +10,7 @@ The joint data is a dictionary with the following format:
 Where:
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
         e.g. something like: "mWristLeft"
-    type = "rot" | "pos" | "scale"
+    type = "rotation" | "position" | "scale"
     type's value = array of three floats (e.g. [x,y,z])
 Multiple joints can be combined into the same dictionary.
 
@@ -177,7 +177,7 @@ class Expression:
         pitch = float(self.face_rot_vec[0][0] + 3.2)
         roll = float(self.face_rot_vec[2][0] * -1.0)
         packed_quaternion = puppetry.packedQuaternionFromEulerAngles(yaw, pitch, roll)
-        data = {"mHead": {"rot": packed_quaternion}}
+        data = {"mHead": {"rotation": packed_quaternion}}
 
         #TODO: scale translation into the model space and apply as the mHead effector target
         #Use the rest of the model points in relation to the plane of the face to

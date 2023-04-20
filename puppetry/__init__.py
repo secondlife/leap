@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""
-Simple framework for sending puppetry data to SL viewer
 
+'''
+@file puppetry.py
+@brief simple framework for sending puppetry data to SL viewer
 This module uses the LEAP framework for sending messages to the SL viewer.
 
 Tell the viewer to launch some script.py with the following option:
@@ -34,7 +35,7 @@ leap.py module is waiting for the initial message from the viewer.  To unblock
 the system paste the following string into the script's stdin:
 
 119:{'data':{'command':'18ce5015-b651-1d2e-2470-0de841fd3635','features':{}},'pump':'54481a53-c41f-4fc2-606e-516daed03636'}
-"""
+'''
 
 import datetime
 import logging
@@ -83,7 +84,7 @@ parts_mask = 0x001F
 skeleton_data = {}  #Gets populated with skleton info by the viewer.
 
 def get_next_request_id():
-    """ Return a number, hopefully unique """
+    ''' Return a number, hopefully unique '''
     global _next_request_id
     _next_request_id = _next_request_id + 1
     return _next_request_id;
@@ -102,7 +103,7 @@ def registerCommand(command, func=None):
     return _register
 
 def deregisterCommand(command):
-    """ not really used, but here for completeness.  Removes a command from handled data """
+    ''' not really used, but here for completeness.  Removes a command from handled data '''
     _logger.debug(f"command='{command}'")
     global _commandRegistry
     try:
@@ -115,7 +116,7 @@ def __init__():
     pass
 
 def start():
-    """ should be called at the start of a puppetry module """
+    ''' should be called at the start of a puppetry module '''
     global _running
     if _running:
         return
@@ -124,14 +125,14 @@ def start():
     eventlet.spawn(_spin)
 
 def isRunning():
-    """ True if puppetry is running, False to quit """
+    ''' True if puppetry is running, False to quit '''
     return _running
 
-def _sendLeapRequest(data):
-    """ Once gets and sets are wrapped up, send them. """
+def sendLeapRequest(namespace,data):
+    ''' Once gets and sets are wrapped up, send them. '''
     if _running:
         try:
-            leap.request('puppetry', data)
+            leap.request(namespace, data)
 
             # Diagnostic data logging
             if _save_data_log:
@@ -149,10 +150,14 @@ def _sendLeapRequest(data):
     else:
         _logger.info('puppetry not running')
 
+def _sendPuppetryRequest(data):
+    ''' Once gets and sets are wrapped up, send them. '''
+    sendLeapRequest('puppetry', data)
+
 def sendGet(data):
-    """ Send a get request to the viewer
+    ''' Send a get request to the viewer
           data can be a single string, or a list/tuple of strings
-    """
+    '''
     if _running:
         data_out = []
         if isinstance(data, str):
@@ -169,31 +174,31 @@ def sendGet(data):
         if data_out:
             msg = { 'command':'get', 'data':data_out}
             msg.setdefault('reqid', get_next_request_id())
-            _sendLeapRequest(msg)
+            _sendPuppetryRequest(msg)
 
 def sendSet(data):
-    """ Send a set request to the viewer
+    ''' Send a set request to the viewer
             data must be a dict
-    """
+    '''
     if _running:
         if isinstance(data, dict):
             msg = { 'command':'set', 'data':data }
             msg.setdefault('reqid', get_next_request_id())
-            _sendLeapRequest(msg)
+            _sendPuppetryRequest(msg)
         else:
             _logger.info(f"malformed 'set' data={data}")
 
 @registerCommand("stop")
 def stop(args = None):
-    """ Stop command from viewer to terminate puppetry module """
+    ''' Stop command from viewer to terminate puppetry module '''
     global _running
     _running = False
     _logger.info("puppetry stopping running")
 
 @registerCommand("log")
 def log(args):
-    """ send args off to viewer's log
-    This is registered as a command just for testing, allowing echo back from the viewer"""
+    ''' send args off to viewer's log
+    This is registered as a command just for testing, allowing echo back from the viewer'''
     _logger.info(args)
 
 
@@ -204,7 +209,7 @@ def log(args):
 camera_number = None
 @registerCommand("set_camera")
 def set_camera(args):
-    """ set_camera command from viewer to set camera device number """
+    ''' set_camera command from viewer to set camera device number '''
     global camera_number
     #_logger.info(f"have set_camera with args ='{args}'")    # {'camera_id': 2}
     cam_num = args.get('camera_id', None)
@@ -216,8 +221,8 @@ def set_camera(args):
 # This command selects the camera device number used by a puppetry module
 
 def part_active(name):
-    """Returns True if the viewer has the named part marked as
-       active."""
+    '''Returns True if the viewer has the named part marked as
+       active.'''
     if name in part_names:
         return (part_names[name] & parts_mask)
     else:
@@ -225,7 +230,7 @@ def part_active(name):
 
 @registerCommand("enable_parts")
 def enable_parts(args):
-    """ enable_parts command from viewer to set bitmask for capturing head, face, left and right hands """
+    ''' enable_parts command from viewer to set bitmask for capturing head, face, left and right hands '''
     global parts_mask
     #_logger.info(f"have enable_parts with args ='{args}'")    # {'parts_mask': 3}
     new_parts_mask = args.get('parts_mask', None)
@@ -235,7 +240,7 @@ def enable_parts(args):
 
 @registerCommand("set_skeleton")
 def set_skeleton(args):
-    """ Receive update of the skeleton data. """
+    ''' Receive update of the skeleton data. '''
 
     global skeleton_data
 
@@ -244,8 +249,8 @@ def set_skeleton(args):
         skeleton_data = skeleton_dict
 
 def get_skeleton_data(name):
-    """Looks for toplevel field named 'name' in skeleton_data
-        returns None if not found, otherwise data."""
+    '''Looks for toplevel field named 'name' in skeleton_data
+        returns None if not found, otherwise data.'''
 
     if type(skeleton_data) is dict:
         if name in skeleton_data:
@@ -306,14 +311,14 @@ def unpackedQuaternion(xyz):
 
 
 def _handleCommand(message):
-    """  Process message as a dict from the viewer
+    '''  Process message as a dict from the viewer
     message = { data: { command: 'foo', args: { ... } }, pump: ... }
 
     Default handled commands are:
         stop
         log
         ...
-    """
+    '''
     _logger.debug(f"leap has command '{message}'")
     handled = False
     try:
@@ -328,19 +333,16 @@ def _handleCommand(message):
                 except Exception as e:
                     _logger.info(f"failed command='{command_name}' err='{e}'")
         except:
-            _logger.info(f"unknown command='{command_name}'")
+            _logger.debug(f"unknown command='{command_name}'")
             known_commands = _commandRegistry.keys()
-            _logger.info(f"known command are {known_commands}")
+            _logger.debug(f"known command are {known_commands}")
     except:
         _logger.info(f"failed command message='{message}'")
     return handled
 
-    _logger.debug(f"message='{message}' handled={handled}")
-    return handled
-
 def _spin():
-    """ Coroutine that sets up data pipeline with the viewer, then runs
-        forever and and checks for incoming commands and data """
+    ''' Coroutine that sets up data pipeline with the viewer, then runs
+        forever and and checks for incoming commands and data '''
     global _running
     _logger.debug('')
 
