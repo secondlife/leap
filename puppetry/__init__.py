@@ -82,7 +82,7 @@ part_names = { 'head'   :1, \
 parts_mask = 0x001F
 
 skeleton_data = {}  #Gets populated with skleton info by the viewer.
-_report_data = {} #Post IK joint reports. 
+_report_data = {} #Post IK joint reports.
 
 def get_next_request_id():
     ''' Return a number, hopefully unique '''
@@ -182,12 +182,10 @@ def sendSet(data):
             data must be a dict
     '''
 
-    req_id = -1
     if _running:
         if isinstance(data, dict):
             req_id = get_next_request_id()
-            msg = { 'command':'set', 'data':data }
-            msg.setdefault('reqid', req_id)
+            msg = { 'command':'set', 'data':data, 'reqid':req_id }
 
             if 'reqid' in data:
                 if data['reqid'] == 'auto': #HACK: Echo request ID into message.
@@ -282,12 +280,10 @@ def get_report( joint_id = None):
        Returns the report for the joint ID if it is an integer or None if not found
        returns entire _report_data structure if joint_id is None'''
 
+    try:
+        return _report_data[jid]
     if joint_id is not None:
-        jid = int(joint_id)
-        if jid in _report_data:
-            return _report_data[jid]
-        else:
-            return None
+        return _report_data.get( int(joint_id) )
     return _report_data
         
 @registerCommand('set_skeleton')
