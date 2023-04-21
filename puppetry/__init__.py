@@ -15,16 +15,16 @@ The viewer will start the script in a side process and will send messages
 to the process's stdin while receiving messages the script writes to its stdout.
 
 The messages have the form:
-num_bytes:{pump="puppetry",data='{"joint_name":{"param_name":[r1.23,r4.56,r7.89]}, ...}"'}
+num_bytes:{pump='puppetry',data='{'joint_name':{'param_name':[r1.23,r4.56,r7.89]}, ...}''}
 
 Where:
 
     num_byes = number of characters following the first colon.
 
     joint_name = string recognized by LLVOAvatar::getJoint(const std::string&),
-        e.g. something like: "mWristLeft"
+        e.g. something like: 'mWristLeft'
 
-    param_name = "local_rot" | "rot" | "pos" | "scale"
+    param_name = 'local_rot' | 'rot' | 'pos' | 'scale'
 
     param_name's value = LLSD array of three floats (e.g. [x,y,z])
 
@@ -82,6 +82,7 @@ part_names = { 'head'   :1, \
 parts_mask = 0x001F
 
 skeleton_data = {}  #Gets populated with skleton info by the viewer.
+_report_data = {} #Post IK joint reports.
 
 def get_next_request_id():
     ''' Return a number, hopefully unique '''
@@ -180,22 +181,32 @@ def sendSet(data):
     ''' Send a set request to the viewer
             data must be a dict
     '''
+
     if _running:
         if isinstance(data, dict):
-            msg = { 'command':'set', 'data':data }
-            msg.setdefault('reqid', get_next_request_id())
+            req_id = get_next_request_id()
+            msg = { 'command':'set', 'data':data, 'reqid':req_id }
+
+            if 'reqid' in data:
+                if data['reqid'] == 'auto': #HACK: Echo request ID into message.
+                    data['reqid'] = reqid
+                else:
+                    reqid = data['reqid']   #Return what user passed in.
             _sendPuppetryRequest(msg)
+
+            return reqid    #Return request_id of data
         else:
             _logger.info(f"malformed 'set' data={data}")
+    return None
 
-@registerCommand("stop")
+@registerCommand('stop')
 def stop(args = None):
     ''' Stop command from viewer to terminate puppetry module '''
     global _running
     _running = False
     _logger.info("puppetry stopping running")
 
-@registerCommand("log")
+@registerCommand('log')
 def log(args):
     ''' send args off to viewer's log
     This is registered as a command just for testing, allowing echo back from the viewer'''
@@ -207,7 +218,7 @@ def log(args):
 # It's up to the module to monitor puppetry.camera_number for changes,
 # so it can execute device changes at a known good point in the main processing loop
 camera_number = None
-@registerCommand("set_camera")
+@registerCommand('set_camera')
 def set_camera(args):
     ''' set_camera command from viewer to set camera device number '''
     global camera_number
@@ -228,7 +239,7 @@ def part_active(name):
     else:
         return False    #Partname not in list.
 
-@registerCommand("enable_parts")
+@registerCommand('enable_parts')
 def enable_parts(args):
     ''' enable_parts command from viewer to set bitmask for capturing head, face, left and right hands '''
     global parts_mask
@@ -238,7 +249,42 @@ def enable_parts(args):
         parts_mask = int(new_parts_mask)
         _logger.info(f"enable_parts set mask to {parts_mask}")
 
-@registerCommand("set_skeleton")
+@registerCommand('joint_report')
+def report(args):
+    '''Receive a report of post-ik data for a joint'''
+
+    global _report_data
+
+    #Add the report for this joint to the _report_data.
+    if args is not None:
+        joint_id = args['joint_id']
+        _report_data[joint_id] = args
+
+
+def flush_reports( joints = None ):
+    '''Flushes report_data.
+        If joints is None, removes all.
+        Otherwise, joints is assumed to be an array of joints to flush.
+    '''
+
+    global _report_data
+
+    if joints is None:
+        _report_data = {}
+    else:
+        for joint in joints:
+            _report_data.pop(int(joint))
+
+def get_report( joint_id = None):
+    '''Accessor for _report_data
+       Returns the report for the joint ID if it is an integer or None if not found
+       returns entire _report_data structure if joint_id is None'''
+
+    if joint_id is not None:
+        return _report_data.get( int(joint_id) )
+    return _report_data
+
+@registerCommand('set_skeleton')
 def set_skeleton(args):
     ''' Receive update of the skeleton data. '''
 
