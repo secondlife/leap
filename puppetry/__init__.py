@@ -280,12 +280,10 @@ def get_report( joint_id = None):
        Returns the report for the joint ID if it is an integer or None if not found
        returns entire _report_data structure if joint_id is None'''
 
-    try:
-        return _report_data[jid]
     if joint_id is not None:
         return _report_data.get( int(joint_id) )
     return _report_data
-        
+
 @registerCommand('set_skeleton')
 def set_skeleton(args):
     ''' Receive update of the skeleton data. '''
