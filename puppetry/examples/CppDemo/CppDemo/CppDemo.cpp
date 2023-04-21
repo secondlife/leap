@@ -15,7 +15,7 @@
 
 void crudeLoop(Puppetry& p)
 {
-	S32 step = 0;	
+	S32 step = 0;
 	bool reverse = false;
 
 	LLSD test = LLSD::emptyMap();

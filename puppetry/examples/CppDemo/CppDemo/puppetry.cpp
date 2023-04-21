@@ -92,7 +92,7 @@ void Puppetry::sendRequest(std::string pump, LLSD data, bool init = false)
 	LLSD msg = LLSD::emptyMap();
 	msg["pump"] = pump;
 	msg["data"] = data;
-	
+
 	if (!init)
 	{
 		msg["reqid"] = LLSD::Integer(mRequestID);
@@ -222,7 +222,7 @@ bool Puppetry::start()
 	}
 
 	flog(ll_pretty_print_sd(msg));
-	
+
 	if (!msg.has("pump") || !msg.has("data") || !msg["data"].has("command") || !msg["data"].has("features"))
 	{
 		LL_WARNS("PUPPET") << "Initial state did not contain correct payload" << LL_ENDL;
