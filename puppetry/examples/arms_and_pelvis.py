@@ -1,8 +1,31 @@
 #!/usr/bin/env python3
-"""
-simple LEAP script to move the avatar
+"""\
+@file arms_and_pelvis.py
+@brief simple LEAP script to demonstraint movable pelvis
 
-head_and_arms_move.py -- use IK to animate the head and arms
+$LicenseInfo:firstyear=2022&license=viewerlgpl$
+Second Life Viewer Source Code
+Copyright (C) 2022, Linden Research, Inc.
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation;
+version 2.1 of the License only.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
+$/LicenseInfo$
+"""
+
+'''
 
 Run this script via viewer menu...
     Advanced --> Puppetry --> Launch LEAP plug-in...
@@ -27,11 +50,10 @@ Where:
         alternatively can use terse format: 'r', 'p', and 's'
 
     type's value = array of three floats (e.g. [x,y,z])
-"""
+'''
 
 import logging
 import math
-import os
 import sys
 import time
 
@@ -73,18 +95,13 @@ import puppetry
 # end_of_elbow_right = [ -0.0497143, -0.967967, 0.629576 ]
 # end_of_wrist_right = [ -0.0497143, -1, 0.629576 ]
 
-orbit_radius = 0.236
+orbit_radius = 0.0
 orbit_period = 8.0
 wave_speed = 2.0 * math.pi / orbit_period
 
-# head will wag its local rot
-head_wag_amplitude = 0.1 * math.pi
-head_wag_period = orbit_period / 4.0
-head_wag_wave_speed = 2.0 * math.pi / head_wag_period
-
 update_period = 0.1
 
-WRIST_X = 0.0
+WRIST_X = 0.3
 WRIST_Y = 1.0
 WRIST_Z = 0.63
 
@@ -100,12 +117,12 @@ neck = glm.vec3(0.0, 0.0, WRIST_Z)
 up_axis = glm.vec3(0.0, 0.0, 1.0)
 
 # pull the circle closer to the body a little bit
-left_center = glm.vec3(orbit_radius, 0.8 * WRIST_Y, 1.0 * WRIST_Z)
+left_center = glm.vec3(WRIST_X, 0.5 * WRIST_Y, 1.0 * WRIST_Z)
 left_axis = glm.normalize(left_center - neck)
 left_vertical = glm.normalize(glm.cross(left_axis, glm.cross(up_axis, left_axis)))
 left_horizontal = glm.normalize(glm.cross(left_axis, left_vertical))
 
-right_center = glm.vec3(WRIST_X, -0.8 * WRIST_Y, 1.0 * WRIST_Z)
+right_center = glm.vec3(WRIST_X, -0.5 * WRIST_Y, 1.0 * WRIST_Z)
 right_axis = glm.normalize(right_center - neck)
 right_vertical = glm.normalize(glm.cross(right_axis, glm.cross(up_axis, right_axis)))
 right_horizontal = glm.normalize(glm.cross(right_vertical, right_axis))
@@ -129,49 +146,47 @@ def computeData(time_step):
 
     # compute the circle positions
     left = left_center + (orbit_radius * s) * left_vertical + (orbit_radius * c) * left_horizontal
+    left = left_center
 
-    # compue left hand rotation:
-    # we will point the wrist bone along the axis
-    # from shoulder to wrist, with palm facing downward
-    left_lever = glm.normalize(left - neck)
-    y_axis = glm.vec3(0.0, 1.0, 0.0)
-    left_pivot = glm.normalize(glm.cross(left_lever, y_axis))
-    real_part = glm.dot(left_lever, y_axis)
-    imaginary_coef = - math.sqrt(1.0 - real_part * real_part)
-    left_q = glm.quat(real_part, imaginary_coef * left_pivot.x, imaginary_coef * left_pivot.y, imaginary_coef * left_pivot.z)
+    # compute an avatar-frame orientation of the left hand
+    # to bring palm forward, fingers up
+    angle = math.pi / 4.0
+    s_angle = math.sin(angle)
+    c_angle = math.cos(angle)
+    q_y = glm.quat(s_angle, c_angle, 0.0, 0.0)
+    q_z = glm.quat(s_angle, 0.0, 0.0, -c_angle)
+    left_q = q_z * q_y
+
+    # similarly for right hand
+    q_y = glm.quat(s_angle, -c_angle, 0.0, 0.0)
+    q_z = glm.quat(s_angle, 0.0, 0.0, c_angle)
+    right_q = q_z * q_y
 
     # Note: want right to be out of phase by pi, hence negate components
     right = right_center - (orbit_radius * s) * right_vertical - (orbit_radius * c) * right_horizontal
+    right = right_center
 
-    # orbit the head position in a little circle
-    head_orbit_radius = 0.08
-    head_left = glm.vec3(0.0, 1.0, 0.0)
-    head_forward = glm.vec3(1.0, 0.0, 0.0)
-    head = 1.1* glm.vec3(HEAD_X, HEAD_Y, HEAD_Z) + (head_orbit_radius * s) * head_left + (head_orbit_radius * c) * head_forward
+    pelvis_orbit_radius = 0.2
+    left_direction = glm.vec3(0.0, 1.0, 0.0)
 
-    # wag the head using local orientation
-    head_wag = head_wag_amplitude * math.sin(t * head_wag_wave_speed)
-    head_rot = glm.quat(math.cos(0.5 * head_wag), 0.0, 0.0, math.sin(0.5 * head_wag))
+    # custom vertical adjustment to keep feet above ground
+    up_direction = glm.vec3(0.0, 0.0, 1.0)
+
+    #pelvis_orbit = (pelvis_orbit_radius * s) * left_direction + 0.07 * up_direction
+    pelvis_orbit = (pelvis_orbit_radius * s) * left_direction
 
     # assemble the message
-    # Note: we're updating three Joints at once in distinct ways:
-    #
-    #   The end of the left wrist gets a position and orientation in pelvis frame
-    #
-    #   The end of the right elbow (e.g. the end of the forearm or tip of wrist)
-    #   gets a position in the pelvis frame, but no orientation so it just keeps
-    #   whatever local orientation supplied by other animations.
-    #
-    #   The head gets a position and a local orientation relative to parent-local
+    # Note: we're using kinematics to place the right and left hands in the avatar-frame
+    # and we're slamming the pelvis position in its parent-frame (however the parent-frame
+    # of the pelvis is the avatar-frame)
     #
     data = {
-        'inverse_kinematics':{
-            'mWristLeft':{'position':[left.x, left.y, left.z],'rotation':puppetry.packedQuaternion(left_q)},
-            'mElbowRight':{'position':[right.x, right.y, right.z]},
-            'mHead':{'position':[head.x, head.y, head.z]}},
+        'inverse_kinematics': {
+            'mWristLeft':{'p':[left.x, left.y, left.z],'r':puppetry.packedQuaternion(left_q)},
+            'mWristRight':{'p':[right.x, right.y, right.z],'r':puppetry.packedQuaternion(right_q)} },
         'joint_state': {
-            'mHead':{'rotation':puppetry.packedQuaternion(head_rot)} }
-    }
+            'mPelvis':{'p':[pelvis_orbit.x, pelvis_orbit.y, pelvis_orbit.z]}}
+        }
     return data
 
 def spin():

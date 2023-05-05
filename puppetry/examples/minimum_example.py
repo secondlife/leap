@@ -7,15 +7,29 @@ import eventlet
 import puppetry
 
 """
-Note: When you debug this script at the command line it will block
-because the leap.py framework is waiting for the initial message
-from the viewer.  To unblock the system paste the following
-string into the script's stdin:
+Run this script via viewer menu...
+    Advanced --> Puppetry --> Launch LEAP plug-in...
 
-119:{'data':{'command':'18ce5015-b651-1d2e-2470-0de841fd3635','features':{}},'pump':'54481a53-c41f-4fc2-606e-516daed03636'}
+This script uses the LEAP framework for sending messages to the viewer.
 
-Also when debugging, for more readable text with newlines between
-messages uncomment the print("") line in the main loop below.
+Typically you just want to send a "set" command:
+    puppetry.sendSet(data)
+
+The 'set' data is a dictionary with the following format:
+    data={"inverse_kinematics":{"joint_name":{"type":[1.23,4.56,7.89] ,...} ,...},
+          "joint_state":{"joint_name":{"type":[1.23,4.56,7.89] ,...} ,...}}
+Where:
+    'inverse_kinematics' for specifying avatar-frame target transforms
+    'joint_state' for specifying parent-frame joint transforms
+        alternatively can use terse format: 'i' instead of 'inverse_kinematics' and 'j' instead of 'joint_state'
+
+    'joint_name' = string recognized by LLVOAvatar::getJoint(const std::string&),
+        e.g. something like: "mWristLeft"
+
+    'type' = "rotation" | "position" | "scale"
+        alternatively can use terse format: 'r', 'p', and 's'
+
+    type's value = array of three floats (e.g. [x,y,z])
 """
 
 update_period = 0.1
