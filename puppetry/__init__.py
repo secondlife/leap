@@ -184,8 +184,8 @@ def sendSet(data):
 
     if _running:
         if isinstance(data, dict):
-            req_id = get_next_request_id()
-            msg = { 'command':'set', 'data':data, 'reqid':req_id }
+            reqid = get_next_request_id()
+            msg = { 'command':'set', 'data':data, 'reqid':reqid }
 
             if 'reqid' in data:
                 if data['reqid'] == 'auto': #HACK: Echo request ID into message.
