@@ -148,20 +148,21 @@ def get(f=None):
 
 def _get(f):
     """Read raw string data in length:data protocol form"""
-    hdr = b''
-    while b':' not in hdr and len(hdr) < 20:
-        hdr += f.read(1)
-        if not hdr:
+    hdr = []
+    while (b := f.read(1)) != b':' and len(hdr) < 20:
+        if not b:
             # Here if read(1) returned empty string, i.e. EOF
             raise ViewerShutdown()
+        hdr.append(b)
 ##         print >>sys.stderr, "_get(): hdr = %r" % hdr
-    if not hdr.endswith(b':'):
+    hdr = b''.join(hdr)
+    if b != b':':
         raise ProtocolError('Expected len:data, got %r' % hdr, hdr)
     try:
         # works even when hdr is bytes
-        length = int(hdr[:-1])
+        length = int(hdr)
     except ValueError:
-        raise ProtocolError('Non-numeric len %r' % hdr[:-1], hdr[:-1])
+        raise ProtocolError('Non-numeric len %r' % hdr, hdr)
 ##     print >>sys.stderr, "_get(): waiting for %s bytes" % length
     parts = []
     received = 0
