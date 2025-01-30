@@ -122,7 +122,7 @@ def get(f=None):
         return llsd.parse(data)
     except llsd.LLSDParseError as e:
         msg = 'Bad received packet (%r)' % e
-        print('%s, %s bytes:' % (msg, len(data)), file=sys.stderr)
+        printerr('%s, %s bytes:' % (msg, len(data)))
         showmax = 40
         # We've observed failures with very large packets;
         # dumping the entire packet wastes time and space.
@@ -139,37 +139,36 @@ def get(f=None):
             ellipsis = '... (%s more)' % (length - trunc)
         offset = -showmax
         for offset in range(0, len(data)-showmax, showmax):
-            print('%04d: %r +' % \
-                  (offset, data[offset:offset+showmax]), file=sys.stderr)
+            printerr('%04d: %r +' % (offset, data[offset:offset+showmax]))
         offset += showmax
-        print('%04d: %r%s' % \
-              (offset, data[offset:], ellipsis), file=sys.stderr)
+        printerr('%04d: %r%s' % (offset, data[offset:], ellipsis))
         raise ParseError(msg, data)
 
 def _get(f):
     """Read raw string data in length:data protocol form"""
-    hdr = b''
-    while b':' not in hdr and len(hdr) < 20:
-        hdr += f.read(1)
-        if not hdr:
+    hdr = []
+    while (b := f.read(1)) != b':' and len(hdr) < 20:
+        if not b:
             # Here if read(1) returned empty string, i.e. EOF
             raise ViewerShutdown()
-##         print >>sys.stderr, "_get(): hdr = %r" % hdr
-    if not hdr.endswith(b':'):
+        hdr.append(b)
+##         printerr("_get(): hdr = %r" % hdr)
+    hdr = b''.join(hdr)
+    if b != b':':
         raise ProtocolError('Expected len:data, got %r' % hdr, hdr)
     try:
         # works even when hdr is bytes
-        length = int(hdr[:-1])
+        length = int(hdr)
     except ValueError:
-        raise ProtocolError('Non-numeric len %r' % hdr[:-1], hdr[:-1])
-##     print >>sys.stderr, "_get(): waiting for %s bytes" % length
+        raise ProtocolError('Non-numeric len %r' % hdr, hdr)
+##     printerr("_get(): waiting for %s bytes" % length)
     parts = []
     received = 0
     while received < length:
         parts.append(f.read(length - received))
         received += len(parts[-1])
-##         print >>sys.stderr, "_get(): received %s of %s bytes: %s" % \
-##               (received, length, ''.join(parts)[:50])
+##         printerr("_get(): received %s of %s bytes: %s" %
+##                  (received, length, ''.join(parts)[:50]))
     data = b''.join(parts)
     assert len(data) == length
     return data
@@ -205,3 +204,6 @@ def request(pump, data, f=None):
         # but it might not be
         xdata = data
     send(pump, xdata, f=f)
+
+def printerr(*args, **kwds):
+    print(file=sys.stderr, *args, **kwds)
